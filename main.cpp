@@ -116,14 +116,13 @@ int main()
     );
 
     float vertices[] = {
-    //    x      y     z         r     g     b       s     t
-        -0.9f, -0.9f, 0.0f,     1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // left
-         0.9f, -0.9,  0.0f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // right
-         0.9f,  0.9f, 0.0f,     0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // upper-right
-        -0.9f,  0.9f, 0.0f,     0.9f, 0.7f, 0.3f,   0.0f, 1.0f  // upper-left
-    }; //     position              color       texture coordinates
+        // positions          // colors           // texture coords
+         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+    };
     unsigned int indices[] = {
-    //  a  b  c
         0, 1, 3, // first triangle
         1, 2, 3  // second triangle
     };
@@ -156,7 +155,7 @@ int main()
     int width, height, nrChannels;
 
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load("res/textures/container.jpg", &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load("res/textures/braun.png", &width, &height, &nrChannels, 0);
 
     if(data == nullptr)
     {
@@ -164,14 +163,20 @@ int main()
         return -1;
     }
 
+    if(nrChannels != 3 && nrChannels != 4)
+    {
+        std::cerr << "Invalid number of channels" << std::endl;
+        return -1;
+    }
+
     glTexImage2D(
         GL_TEXTURE_2D,                      // target (1D, 2D or 3D)
         0,                                  // mipmap level (0 = base level)
-        nrChannels == 2? GL_RGBA: GL_RGB, // internal format (how OpenGL will store the texture)
+        nrChannels == 4? GL_RGBA: GL_RGB, // internal format (how OpenGL will store the texture)
         width,                              // width (of the texture)
         height,                             // height <-->
         0,                                  // border (legacy stuff, always 0)
-        nrChannels == 2? GL_RGBA: GL_RGB, // format (how the data is stored in RAM)
+        nrChannels == 4? GL_RGBA: GL_RGB, // format (how the data is stored in RAM)
         GL_UNSIGNED_BYTE,                   // type (type of the data)
         data                                // data (self-explanatory)
     );
