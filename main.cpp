@@ -1,9 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <memory>
 #include <iostream>
 
@@ -12,6 +9,7 @@
 #include "VertexBuffer.hpp"
 #include "IndexBuffer.hpp"
 #include "VertexBufferLayout.hpp"
+#include "Texture.hpp"
 
 #if !defined(OpenGL_VERSION_MAJOR) || !defined(OpenGL_VERSION_MINOR)
     #define OpenGL_VERSION_MAJOR 3
@@ -23,10 +21,27 @@ void framebuffer_size_callback(GLFWwindow* window, const int width, const int he
     glViewport(0, 0, width, height);
 }
 
-void process_input(GLFWwindow* window)
+struct State 
+{
+    float mix = 0.2f;
+};
+
+void process_input(GLFWwindow* window, State& state)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    else if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+        state.mix += 0.01f;
+        if (state.mix > 1.0f)
+            state.mix = 1.0f;
+    }
+    else if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        state.mix -= 0.01f;
+        if (state.mix < 0.0f)
+            state.mix = 0.0f;
+    }
 }
 
 namespace Resources {
@@ -142,53 +157,22 @@ int main()
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Loading texture
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    Texture texture("res/textures/container.png");
+    Texture texture2("res/textures/braun.png");    
+    
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int width, height, nrChannels;
-
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load("res/textures/braun.png", &width, &height, &nrChannels, 0);
-
-    if(data == nullptr)
-    {
-        std::cerr << "Failed to load texture" << std::endl;
-        return -1;
-    }
-
-    if(nrChannels != 3 && nrChannels != 4)
-    {
-        std::cerr << "Invalid number of channels" << std::endl;
-        return -1;
-    }
-
-    glTexImage2D(
-        GL_TEXTURE_2D,                      // target (1D, 2D or 3D)
-        0,                                  // mipmap level (0 = base level)
-        nrChannels == 4? GL_RGBA: GL_RGB, // internal format (how OpenGL will store the texture)
-        width,                              // width (of the texture)
-        height,                             // height <-->
-        0,                                  // border (legacy stuff, always 0)
-        nrChannels == 4? GL_RGBA: GL_RGB, // format (how the data is stored in RAM)
-        GL_UNSIGNED_BYTE,                   // type (type of the data)
-        data                                // data (self-explanatory)
-    );
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    stbi_image_free(data);
     //###
     double time;
+
+    State state;
     while(!glfwWindowShouldClose(window.get()))
     {
         time = glfwGetTime();
-        process_input(window.get());
+        process_input(window.get(), state);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -196,8 +180,13 @@ int main()
         // Draw triangle
         shader.Bind();
         shader.SetUniform("uOffset", cosf(time * M_PI) / 8.f, sinf(time * M_PI) / 8.f, 0.0f);
+        shader.SetUniform("uMix", state.mix);
 
-        // glBindTexture(GL_TEXTURE_2D, texture);
+        texture.Bind(0);
+        shader.SetUniform("uTexture_0", 0);
+
+        texture2.Bind(1);
+        shader.SetUniform("uTexture_1", 1);
 
         va.Bind();
         ib.Bind();
