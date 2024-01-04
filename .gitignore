@@ -34,5 +34,5 @@
 # Build folder
 build/
 
-# External dependencies
-GLAD/
+# vscode
+.vscode/

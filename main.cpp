@@ -1,11 +1,21 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include <memory>
 #include <iostream>
 
+#include "Shader.hpp"
+#include "VertexArray.hpp"
+#include "VertexBuffer.hpp"
+#include "IndexBuffer.hpp"
+#include "VertexBufferLayout.hpp"
+
 #if !defined(OpenGL_VERSION_MAJOR) || !defined(OpenGL_VERSION_MINOR)
-    #error "OpenGL version not defined"
+    #define OpenGL_VERSION_MAJOR 3
+    #define OpenGL_VERSION_MINOR 3
 #endif
 
 void framebuffer_size_callback(GLFWwindow* window, const int width, const int height)
@@ -19,29 +29,28 @@ void process_input(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-constexpr const char* vertex_shader_source = 
-        "#version 460 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "    gl_Position = vec4(aPos, 1.0);\n"
-        "}\0";
-
-
-constexpr const char* fragment_shader_source = 
-        "#version 460 core\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-        "}\0";
+namespace Resources {
+    namespace Shaders {
+        const std::filesystem::path basic_vertex = "res/shaders/basic.vert";
+        const std::filesystem::path basic_fragment = "res/shaders/basic.frag";
+    }
+}
 
 int main()
 {
     // Initialize GLFW
-    glfwInit();
+    if(!glfwInit())
+    {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
+
+        int error_code = glfwGetError(nullptr);
+        if (error_code == GLFW_PLATFORM_ERROR)
+            std::cerr << "GLFW_PLATFORM_ERROR" << std::endl;
+        else
+            std::cerr << "Unknown error code" << std::endl;
+            
+        return -1;
+    }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, OpenGL_VERSION_MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, OpenGL_VERSION_MINOR);
@@ -55,7 +64,36 @@ int main()
     std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window { glfwCreateWindow(800, 600, "OpenGL", nullptr, nullptr), glfwDestroyWindow };
     if(window == nullptr)
     {
-        std::cerr << "Failed to create GLFW window" << std::endl;
+        int error_code = glfwGetError(nullptr);
+        std::cerr << "Failed to create GLFW window, " << std::endl;
+
+        switch (error_code){
+            case GLFW_NOT_INITIALIZED:
+                std::cerr << "GLFW_NOT_INITIALIZED" << std::endl;
+                break;
+            case GLFW_INVALID_ENUM:
+                std::cerr << "GLFW_INVALID_ENUM" << std::endl;
+                break;
+            case GLFW_INVALID_VALUE:
+                std::cerr << "GLFW_INVALID_VALUE" << std::endl;
+                break;
+            case GLFW_API_UNAVAILABLE:
+                std::cerr << "GLFW_API_UNAVAILABLE" << std::endl;
+                break;
+            case GLFW_VERSION_UNAVAILABLE:
+                std::cerr << "GLFW_VERSION_UNAVAILABLE" << std::endl;
+                break;
+            case GLFW_FORMAT_UNAVAILABLE:
+                std::cerr << "GLFW_FORMAT_UNAVAILABLE" << std::endl;
+                break;
+            case GLFW_PLATFORM_ERROR:
+                std::cerr << "GLFW_PLATFORM_ERROR" << std::endl;
+                break;
+            default:
+                std::cerr << "Unknown error code" << std::endl;
+                break;
+        }
+
         glfwTerminate();
         return -1;
     }
@@ -69,121 +107,100 @@ int main()
 
     glfwSetFramebufferSizeCallback(window.get(), framebuffer_size_callback);
 
-    // Compile shaders
-    unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_source, nullptr);
-    glCompileShader(vertex_shader);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_source, nullptr);
-    glCompileShader(fragment_shader);
-
-    // Check for shader compilation errors
-    int success;
-    char info_log[512];
-
-    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(vertex_shader, 512, nullptr, info_log);
-        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << info_log << std::endl;
-    }
-
-    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(fragment_shader, 512, nullptr, info_log);
-        std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << info_log << std::endl;
-    }
-
-    // Create shader program
-    unsigned int shader_program = glCreateProgram();
-
-    glAttachShader(shader_program, vertex_shader);
-    glAttachShader(shader_program, fragment_shader);
-
-    glLinkProgram(shader_program);
-
-    // Check for shader program linking errors and delete shaders
-    glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
-    if(!success)
-    {
-        glGetProgramInfoLog(shader_program, 512, nullptr, info_log);
-        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << info_log << std::endl;
-    }
-
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
-
-    // Set up vertex data and buffers
-    // float vertices[] = {
-    // //    x      y     z
-    //     -0.9f, -0.9f, 0.0f, // left
-    //      0.9f, -0.9, 0.0f, // right
-    //      0.9f,  0.9f, 0.0f  // upper-right
-    // };
+    Shader shader(
+        Resources::Shaders::basic_vertex,
+        Resources::Shaders::basic_fragment
+    );
 
     float vertices[] = {
-    //    x      y     z
-        -0.9f, -0.9f, 0.0f, // left
-         0.9f, -0.9, 0.0f, // right
-         0.9f,  0.9f, 0.0f,  // upper-right
-        -0.9f,  0.9f, 0.0f  // upper-left
-    };
+    //    x      y     z         r     g     b       s     t
+        -0.9f, -0.9f, 0.0f,     1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // left
+         0.9f, -0.9,  0.0f,     0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // right
+         0.9f,  0.9f, 0.0f,     0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // upper-right
+        -0.9f,  0.9f, 0.0f,     0.9f, 0.7f, 0.3f,   0.0f, 1.0f  // upper-left
+    }; //     position              color       texture coordinates
     unsigned int indices[] = {
     //  a  b  c
-        0, 1, 2, // first triangle
-        0, 2, 3  // second triangle
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
     };
 
-    unsigned int EBO;   // Element Buffer Object
-    glGenBuffers(1, &EBO);
+    VertexBuffer vb(vertices, sizeof(vertices));
+    VertexBufferLayout layout;
+    layout.Push<float>(3);  // position
+    layout.Push<float>(3);  // color
+    layout.Push<float>(2);  // texture coordinates
+    
+    IndexBuffer ib(indices, sizeof(indices) / sizeof(*indices));
 
-    unsigned int VBO, VAO;  // Vertex Buffer Object, Vertex Array Object
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(
-        0, // location
-        3, // size
-        GL_FLOAT, // type
-        GL_FALSE, // normalized
-        3 * sizeof(float), // stride
-        nullptr // offset
-    );
-    glEnableVertexAttribArray(0); // in location 0
-
-    // Unbind buffer and vertex array so other calls won't modify them
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    VertexArray va;
+    va.AddBuffer(vb, layout);
 
     // Wireframe mode
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    // Loading texture
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char* data = stbi_load("res/textures/container.jpg", &width, &height, &nrChannels, 0);
+
+    if(data == nullptr)
+    {
+        std::cerr << "Failed to load texture" << std::endl;
+        return -1;
+    }
+
+    glTexImage2D(
+        GL_TEXTURE_2D,                      // target (1D, 2D or 3D)
+        0,                                  // mipmap level (0 = base level)
+        nrChannels == 2? GL_RGBA: GL_RGB, // internal format (how OpenGL will store the texture)
+        width,                              // width (of the texture)
+        height,                             // height <-->
+        0,                                  // border (legacy stuff, always 0)
+        nrChannels == 2? GL_RGBA: GL_RGB, // format (how the data is stored in RAM)
+        GL_UNSIGNED_BYTE,                   // type (type of the data)
+        data                                // data (self-explanatory)
+    );
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(data);
+    //###
+    double time;
     while(!glfwWindowShouldClose(window.get()))
     {
+        time = glfwGetTime();
         process_input(window.get());
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw triangle
-        glUseProgram(shader_program);
-        glBindVertexArray(VAO);
-        // glDrawArrays(GL_TRIANGLES, 0, 3);
+        shader.Bind();
+        shader.SetUniform("uOffset", cosf(time * M_PI) / 8.f, sinf(time * M_PI) / 8.f, 0.0f);
+
+        // glBindTexture(GL_TEXTURE_2D, texture);
+
+        va.Bind();
+        ib.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
 
         glfwSwapBuffers(window.get());
         glfwPollEvents();
+        while(glfwGetTime() - time < 1.0 / 60.0);
     }
 
     glfwTerminate();

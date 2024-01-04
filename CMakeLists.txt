@@ -1,18 +1,31 @@
 cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 project(LearnOpenGL)
 
+### Compiler setup
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic -Wno-unused-parameter -Wno-unused-variable")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wpedantic")
 
-set(GLAD_DIR ${CMAKE_SOURCE_DIR}/GLAD)
+option(Strict "Strict" OFF)
 
-add_executable(${PROJECT_NAME} main.cpp ${GLAD_DIR}/src/glad.c)
-target_include_directories(${PROJECT_NAME} PRIVATE ${GLAD_DIR}/include)
+if(Strict MATCHES OFF)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Wno-unused-variable -Wno-sign-compare -Wno-comment")
+endif()
 
+### Vendor setup (GLAD, STB)
+set(VENDOR_DIR ${CMAKE_SOURCE_DIR}/vendor)
+set(STB_DIR ${VENDOR_DIR}/stb)
+set(GLAD_DIR ${VENDOR_DIR}/GLAD)
+file(GLOB GLAD_SRC ${GLAD_DIR}/src/glad.c)
+
+file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/**.cpp)
+set(HEADERS ${CMAKE_SOURCE_DIR}/inc ${GLAD_DIR}/include ${STB_DIR}/inc)
+
+### OpenGL setup
 set(OpenGLPackages
         OpenGL
-        glfw3)
+        glfw3
+        glm)
 
 foreach(package ${OpenGLPackages})
     find_package(${package} REQUIRED)
@@ -21,6 +34,9 @@ foreach(package ${OpenGLPackages})
     endif()
 endforeach()
 
-target_link_libraries(${PROJECT_NAME} glfw GL)
+### Project setup
+add_executable(${PROJECT_NAME} main.cpp ${GLAD_SRC} ${SOURCES})
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE OpenGL_VERSION_MAJOR=4 OpenGL_VERSION_MINOR=6)
+target_include_directories(${PROJECT_NAME} PRIVATE ${HEADERS})
+target_link_libraries(${PROJECT_NAME} glfw GL)
+target_compile_definitions(${PROJECT_NAME} PRIVATE OpenGL_VERSION_MAJOR=3 OpenGL_VERSION_MINOR=3)
