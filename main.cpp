@@ -11,6 +11,9 @@
 #include "VertexBufferLayout.hpp"
 #include "Texture.hpp"
 
+#include "jac/main.hpp"
+#include "jac/type_defs.hpp"
+
 #if !defined(OpenGL_VERSION_MAJOR) || !defined(OpenGL_VERSION_MINOR)
     #define OpenGL_VERSION_MAJOR 3
     #define OpenGL_VERSION_MINOR 3
@@ -51,7 +54,7 @@ namespace Resources {
     }
 }
 
-int main()
+int run(jac::Arguments& arg, jac::Arguments& env)
 {
     // Initialize GLFW
     if(!glfwInit())
@@ -63,7 +66,7 @@ int main()
             std::cerr << "GLFW_PLATFORM_ERROR" << std::endl;
         else
             std::cerr << "Unknown error code" << std::endl;
-            
+
         return -1;
     }
 
@@ -76,7 +79,7 @@ int main()
     #endif
 
     // Create window
-    std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window { glfwCreateWindow(800, 600, "OpenGL", nullptr, nullptr), glfwDestroyWindow };
+    unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window { glfwCreateWindow(800, 600, "OpenGL", nullptr, nullptr), glfwDestroyWindow };
     if(window == nullptr)
     {
         int error_code = glfwGetError(nullptr);
@@ -159,9 +162,9 @@ int main()
     // Loading texture
 
     Texture texture("res/textures/container.png");
-    Texture texture2("res/textures/braun.png");    
+    Texture texture2("res/textures/braun.png");
     
-    
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 

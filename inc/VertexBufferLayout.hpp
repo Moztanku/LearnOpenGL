@@ -2,15 +2,16 @@
 
 #include <glad/glad.h>
 
-#include <sys/types.h>
 #include <vector>
 #include <cassert>
+
+#include "jac/type_defs.hpp"
 
 struct VertexBufferElement 
 {
     uint count;
     uint type;
-    u_char normalized;
+    uchar normalized;
 
     static uint GetSizeOfType(uint type)
     {

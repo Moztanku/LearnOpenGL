@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sys/types.h>
+#include "jac/type_defs.hpp"
 
 class IndexBuffer
 {

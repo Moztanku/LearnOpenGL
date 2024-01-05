@@ -12,14 +12,22 @@ if(Strict MATCHES OFF)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter -Wno-unused-variable -Wno-sign-compare -Wno-comment")
 endif()
 
-### Vendor setup (GLAD, STB)
+### Vendor setup (GLAD, STB, JacekLib)
 set(VENDOR_DIR ${CMAKE_SOURCE_DIR}/vendor)
+
 set(STB_DIR ${VENDOR_DIR}/stb)
+
 set(GLAD_DIR ${VENDOR_DIR}/GLAD)
 file(GLOB GLAD_SRC ${GLAD_DIR}/src/glad.c)
 
+
+set(JacekLib_DIR ${VENDOR_DIR}/JacekLib)
+add_subdirectory(${JacekLib_DIR})
+
+### Source setup
+
 file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/**.cpp)
-set(HEADERS ${CMAKE_SOURCE_DIR}/inc ${GLAD_DIR}/include ${STB_DIR}/inc)
+set(HEADERS ${CMAKE_SOURCE_DIR}/inc ${GLAD_DIR}/include ${STB_DIR}/inc ${JacekLib_DIR}/inc)
 
 ### OpenGL setup
 set(OpenGLPackages
@@ -38,5 +46,5 @@ endforeach()
 add_executable(${PROJECT_NAME} main.cpp ${GLAD_SRC} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${HEADERS})
-target_link_libraries(${PROJECT_NAME} glfw GL)
+target_link_libraries(${PROJECT_NAME} glfw GL JacekLib)
 target_compile_definitions(${PROJECT_NAME} PRIVATE OpenGL_VERSION_MAJOR=3 OpenGL_VERSION_MINOR=3)
