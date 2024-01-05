@@ -20,7 +20,6 @@ set(STB_DIR ${VENDOR_DIR}/stb)
 set(GLAD_DIR ${VENDOR_DIR}/GLAD)
 file(GLOB GLAD_SRC ${GLAD_DIR}/src/glad.c)
 
-
 set(JacekLib_DIR ${VENDOR_DIR}/JacekLib)
 add_subdirectory(${JacekLib_DIR})
 
