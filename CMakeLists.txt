@@ -44,12 +44,13 @@ set(JacekLib_DIR ${VENDOR_DIR}/JacekLib)
 set(JacekLib_URL "http://github.com/Moztanku/JacekLib/archive/main.zip")
 
 if (NOT EXISTS ${JacekLib_DIR})
-    file(DOWNLOAD ${JacekLib_URL} ${JacekLib_DIR}/JacekLib.zip SHOW_PROGRESS)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xzf JacekLib.zip
-        WORKING_DIRECTORY ${JacekLib_DIR}
-    )
-    file(REMOVE ${JacekLib_DIR}/JacekLib.zip)
+    file(DOWNLOAD ${JacekLib_URL} ${VENDOR_DIR}/JacekLib.zip SHOW_PROGRESS)
+    file(ARCHIVE_EXTRACT
+        INPUT ${VENDOR_DIR}/JacekLib.zip
+        DESTINATION ${VENDOR_DIR})
+
+    file(RENAME ${VENDOR_DIR}/JacekLib-main ${JacekLib_DIR})
+    file(REMOVE ${VENDOR_DIR}/JacekLib.zip)
 endif()
 
 add_subdirectory(${JacekLib_DIR})
@@ -78,3 +79,11 @@ add_executable(${PROJECT_NAME} main.cpp ${GLAD_SRC} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${HEADERS})
 target_link_libraries(${PROJECT_NAME} glfw GL JacekLib glad)
 target_compile_definitions(${PROJECT_NAME} PRIVATE OpenGL_VERSION_MAJOR=4 OpenGL_VERSION_MINOR=6)
+
+#### Custom targets
+
+add_custom_target(cleanup
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${VENDOR_DIR}
+    COMMENT "Removing generated & downloaded files"
+)
