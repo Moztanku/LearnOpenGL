@@ -1,3 +1,14 @@
+/**
+ * @file main.cpp
+ * @author Moztanku (mostankpl@gmail.com)
+ * @brief Entry point of the program, contains main.hpp that wraps main function
+ *      and calls run function from main.cpp
+ * @version 0.1
+ * @date 2024-01-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
@@ -54,6 +65,13 @@ namespace Resources {
     }
 }
 
+/**
+ * @brief Starting point, function called by jac::main in main.hpp, contains the program loop
+ * 
+ * @param arg arguments passed to the program, processed by jac::main
+ * @param env environment variables passed to the program, processed by jac::main
+ * @retval int return status of the program
+ */
 int run(jac::Arguments& arg, jac::Arguments& env)
 {
     // Initialize GLFW

@@ -1,3 +1,13 @@
+/**
+ * @file VertexBufferLayout.hpp
+ * @author Moztanku (mostankpl@gmail.com)
+ * @brief Class that describes single vertice (element) in VertexBuffer
+ * @version 0.1
+ * @date 2024-01-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #pragma once
 
 #include <glad/gl.h>

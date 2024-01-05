@@ -1,3 +1,13 @@
+/**
+ * @file Texture.hpp
+ * @author Moztanku (mostankpl@gmail.com)
+ * @brief Abstraction of OpenGL Texture
+ * @version 0.1
+ * @date 2024-01-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #pragma once
 
 #include <glad/gl.h>

@@ -1,3 +1,13 @@
+/**
+ * @file VertexBufferLayout.cpp
+ * @author Moztanku (mostankpl@gmail.com)
+ * @brief Implementation of VertexBufferLayout class
+ * @version 0.1
+ * @date 2024-01-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include "VertexBufferLayout.hpp"
 
 template<>

@@ -1,3 +1,13 @@
+/**
+ * @file IndexBuffer.cpp
+ * @author Moztanku (mostankpl@gmail.com)
+ * @brief Implementation of IndexBuffer class
+ * @version 0.1
+ * @date 2024-01-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include "IndexBuffer.hpp"
 
 #include <glad/gl.h>

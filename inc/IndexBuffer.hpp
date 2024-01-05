@@ -1,3 +1,13 @@
+/**
+ * @file IndexBuffer.hpp
+ * @author Moztanku (mostankpl@gmail.com)
+ * @brief Abstraction of OpenGL Index Buffer (EBO), holds indices of vertex data
+ * @version 0.1
+ * @date 2024-01-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #pragma once
 
 #include "jac/type_defs.hpp"

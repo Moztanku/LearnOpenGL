@@ -1,7 +1,20 @@
+/**
+ * @file Texture.cpp
+ * @author Moztanku (mostankpl@gmail.com)
+ * @brief Implementation of Texture class
+ * @version 0.1
+ * @date 2024-01-05
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include "Texture.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#include "jac/require.hpp"
+#include "jac/debug.hpp"
 
 Texture::Texture(const std::filesystem::path& path)
 {
@@ -53,6 +66,9 @@ void Texture::Bind() const
 
 void Texture::Bind(uint slot)
 {
+    if constexpr(Debug)
+        JAC_REQUIRE(slot < 32);
+
     m_slot = slot;
     Bind();
 }

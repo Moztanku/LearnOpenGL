@@ -39,3 +39,6 @@ vendor/
 
 # vscode
 .vscode/
+
+# Documentation
+docs/
