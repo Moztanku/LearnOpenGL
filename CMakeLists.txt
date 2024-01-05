@@ -41,9 +41,15 @@ target_include_directories(glad PUBLIC ${GLAD_DIR}/include)
 
 ## JacekLib
 set(JacekLib_DIR ${VENDOR_DIR}/JacekLib)
+set(JacekLib_URL "http://github.com/Moztanku/JacekLib/archive/main.zip")
 
 if (NOT EXISTS ${JacekLib_DIR})
-    message(FATAL_ERROR "Run \"git submodule update --init --recursive\" first")
+    file(DOWNLOAD ${JacekLib_URL} ${JacekLib_DIR}/JacekLib.zip SHOW_PROGRESS)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xzf JacekLib.zip
+        WORKING_DIRECTORY ${JacekLib_DIR}
+    )
+    file(REMOVE ${JacekLib_DIR}/JacekLib.zip)
 endif()
 
 add_subdirectory(${JacekLib_DIR})
