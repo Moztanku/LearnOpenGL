@@ -10,6 +10,6 @@ The purpose of this repository is to learn OpenGL and basics of 3D-rendering whi
 `doxygen`
 
 ## Requirements
-- OpenGL (opengl.org)
-- GLFW (glfw.org)
-- GLM (github.com/g-truc/glm)
+- [OpenGL](opengl.org "OpenGL's website")
+- [GLFW](glfw.org "GLFW's website")
+- [GLM](github.com/g-truc/glm "GLM's repository")
