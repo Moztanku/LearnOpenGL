@@ -15,18 +15,43 @@ endif()
 ### Vendor setup (GLAD, STB, JacekLib)
 set(VENDOR_DIR ${CMAKE_SOURCE_DIR}/vendor)
 
+## STB_image
 set(STB_DIR ${VENDOR_DIR}/stb)
+set(STB_IMG_URL "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h")
 
+if (NOT EXISTS ${STB_DIR}/inc/stb_image.h)
+    file(DOWNLOAD ${STB_IMG_URL} ${STB_DIR}/inc/stb_image.h SHOW_PROGRESS)
+endif()
+
+## GLAD
 set(GLAD_DIR ${VENDOR_DIR}/GLAD)
-file(GLOB GLAD_SRC ${GLAD_DIR}/src/glad.c)
+set(GLAD_URL "https://gen.glad.sh/generated/tmpeye69fnzglad/glad.zip")
 
+if (NOT EXISTS ${GLAD_DIR})
+    file(DOWNLOAD ${GLAD_URL} ${GLAD_DIR}/glad.zip SHOW_PROGRESS)
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xzf glad.zip
+        WORKING_DIRECTORY ${GLAD_DIR}
+    )
+    file(REMOVE ${GLAD_DIR}/glad.zip)
+endif()
+
+add_library(glad STATIC ${GLAD_DIR}/src/gl.c)
+target_include_directories(glad PUBLIC ${GLAD_DIR}/include)
+
+## JacekLib
 set(JacekLib_DIR ${VENDOR_DIR}/JacekLib)
+
+if (NOT EXISTS ${JacekLib_DIR})
+    message(FATAL_ERROR "Run \"git submodule update --init --recursive\" first")
+endif()
+
 add_subdirectory(${JacekLib_DIR})
 
 ### Source setup
 
 file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/**.cpp)
-set(HEADERS ${CMAKE_SOURCE_DIR}/inc ${GLAD_DIR}/include ${STB_DIR}/inc ${JacekLib_DIR}/inc)
+set(HEADERS ${CMAKE_SOURCE_DIR}/inc ${STB_DIR}/inc)
 
 ### OpenGL setup
 set(OpenGLPackages
@@ -45,5 +70,5 @@ endforeach()
 add_executable(${PROJECT_NAME} main.cpp ${GLAD_SRC} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${HEADERS})
-target_link_libraries(${PROJECT_NAME} glfw GL JacekLib)
-target_compile_definitions(${PROJECT_NAME} PRIVATE OpenGL_VERSION_MAJOR=3 OpenGL_VERSION_MINOR=3)
+target_link_libraries(${PROJECT_NAME} glfw GL JacekLib glad)
+target_compile_definitions(${PROJECT_NAME} PRIVATE OpenGL_VERSION_MAJOR=4 OpenGL_VERSION_MINOR=6)

@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <memory>
@@ -117,7 +117,7 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     }
     glfwMakeContextCurrent(window.get());
 
-    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    if(!gladLoaderLoadGL())
     {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return -1;

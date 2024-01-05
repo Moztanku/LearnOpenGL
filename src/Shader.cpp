@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iostream>
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 namespace {
     struct ShaderProgramSource

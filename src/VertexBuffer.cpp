@@ -1,6 +1,6 @@
 #include "VertexBuffer.hpp"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 VertexBuffer::VertexBuffer(const void* data, uint size) {
     glGenBuffers(1, &m_id);

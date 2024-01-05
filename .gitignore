@@ -34,5 +34,8 @@
 # Build folder
 build/
 
+# Vendor folder
+vendor/
+
 # vscode
 .vscode/
