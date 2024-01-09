@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+cmake_minimum_required(VERSION 3.28)
 project(LearnOpenGL)
 
 ### Compiler setup
@@ -56,7 +56,6 @@ endif()
 add_subdirectory(${JacekLib_DIR})
 
 ### Source setup
-
 file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/**.cpp)
 set(HEADERS ${CMAKE_SOURCE_DIR}/inc ${STB_DIR}/inc)
 
@@ -81,7 +80,6 @@ target_link_libraries(${PROJECT_NAME} glfw GL JacekLib glad)
 target_compile_definitions(${PROJECT_NAME} PRIVATE OpenGL_VERSION_MAJOR=4 OpenGL_VERSION_MINOR=6)
 
 #### Custom targets
-
 add_custom_target(cleanup
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${VENDOR_DIR}
