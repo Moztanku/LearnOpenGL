@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2024
  * 
  */
-#include "VertexArray.hpp"
+#include "Renderer/VertexArray.hpp"
 
 VertexArray::VertexArray() 
 {

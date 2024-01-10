@@ -11,8 +11,8 @@
  */
 #pragma once
 
-#include "VertexBuffer.hpp"
-#include "VertexBufferLayout.hpp"
+#include "Renderer/VertexBuffer.hpp"
+#include "Renderer/VertexBufferLayout.hpp"
 
 class VertexArray
 {

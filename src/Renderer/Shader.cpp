@@ -8,13 +8,15 @@
  * @copyright Copyright (c) 2024
  * 
  */
-#include "Shader.hpp"
+#include "Renderer/Shader.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 
 #include <glad/gl.h>
+
+#include <glm/gtc/type_ptr.hpp>
 
 namespace {
     struct ShaderProgramSource
@@ -232,23 +234,23 @@ void Shader::SetUniformM(const std::string& name, const Matrix& matrix)
     const uint location = GetUniformLocation(name);
 
     if constexpr(std::is_same_v<Matrix, glm::mat2>)
-        glUniformMatrix2fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix2fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else if constexpr(std::is_same_v<Matrix, glm::mat3>)
-        glUniformMatrix3fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else if constexpr(std::is_same_v<Matrix, glm::mat4>)
-        glUniformMatrix4fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else if constexpr(std::is_same_v<Matrix, glm::mat2x3>)
-        glUniformMatrix2x3fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix2x3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else if constexpr(std::is_same_v<Matrix, glm::mat2x4>)
-        glUniformMatrix2x4fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix2x4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else if constexpr(std::is_same_v<Matrix, glm::mat3x2>)
-        glUniformMatrix3x2fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix3x2fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else if constexpr(std::is_same_v<Matrix, glm::mat3x4>)
-        glUniformMatrix3x4fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix3x4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else if constexpr(std::is_same_v<Matrix, glm::mat4x2>)
-        glUniformMatrix4x2fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix4x2fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else if constexpr(std::is_same_v<Matrix, glm::mat4x3>)
-        glUniformMatrix4x3fv(location, 1, GL_FALSE, &matrix[0][0]);
+        glUniformMatrix4x3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
     else
         static_assert(false, "Invalid matrix type");
 }

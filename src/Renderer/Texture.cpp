@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2024
  * 
  */
-#include "Texture.hpp"
+#include "Renderer/Texture.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

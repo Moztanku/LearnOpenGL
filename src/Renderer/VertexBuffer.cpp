@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2024
  * 
  */
-#include "VertexBuffer.hpp"
+#include "Renderer/VertexBuffer.hpp"
 
 #include <glad/gl.h>
 

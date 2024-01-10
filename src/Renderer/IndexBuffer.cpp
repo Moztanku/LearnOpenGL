@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2024
  * 
  */
-#include "IndexBuffer.hpp"
+#include "Renderer/IndexBuffer.hpp"
 
 #include <glad/gl.h>
 

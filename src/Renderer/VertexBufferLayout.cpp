@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2024
  * 
  */
-#include "VertexBufferLayout.hpp"
+#include "Renderer/VertexBufferLayout.hpp"
 
 template<>
 void VertexBufferLayout::Push<float>(uint count)

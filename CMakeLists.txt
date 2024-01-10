@@ -15,30 +15,6 @@ endif()
 ### Vendor setup (GLAD, STB, JacekLib)
 set(VENDOR_DIR ${CMAKE_SOURCE_DIR}/vendor)
 
-## STB_image
-set(STB_DIR ${VENDOR_DIR}/stb)
-set(STB_IMG_URL "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h")
-
-if (NOT EXISTS ${STB_DIR}/inc/stb_image.h)
-    file(DOWNLOAD ${STB_IMG_URL} ${STB_DIR}/inc/stb_image.h SHOW_PROGRESS)
-endif()
-
-## GLAD
-set(GLAD_DIR ${VENDOR_DIR}/GLAD)
-set(GLAD_URL "https://gen.glad.sh/generated/tmpeye69fnzglad/glad.zip")
-
-if (NOT EXISTS ${GLAD_DIR})
-    file(DOWNLOAD ${GLAD_URL} ${GLAD_DIR}/glad.zip SHOW_PROGRESS)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xzf glad.zip
-        WORKING_DIRECTORY ${GLAD_DIR}
-    )
-    file(REMOVE ${GLAD_DIR}/glad.zip)
-endif()
-
-add_library(glad STATIC ${GLAD_DIR}/src/gl.c)
-target_include_directories(glad PUBLIC ${GLAD_DIR}/include)
-
 ## JacekLib
 set(JacekLib_DIR ${VENDOR_DIR}/JacekLib)
 set(JacekLib_URL "http://github.com/Moztanku/JacekLib/archive/main.zip")
@@ -52,6 +28,40 @@ if (NOT EXISTS ${JacekLib_DIR})
     file(RENAME ${VENDOR_DIR}/JacekLib-main ${JacekLib_DIR})
     file(REMOVE ${VENDOR_DIR}/JacekLib.zip)
 endif()
+
+## STB_image
+set(STB_DIR ${VENDOR_DIR}/stb)
+set(STB_IMG_URL "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h")
+
+if (NOT EXISTS ${STB_DIR}/inc/stb_image.h)
+    file(DOWNLOAD ${STB_IMG_URL} ${STB_DIR}/inc/stb_image.h SHOW_PROGRESS)
+endif()
+
+## GLAD
+set(GLAD_DIR ${VENDOR_DIR}/GLAD)
+set(GLAD_URL "https://gitfront.io/r/Moztanku/8s4L1GHF3Tsc/Resources/raw/glad.zip")
+
+if (NOT EXISTS ${GLAD_DIR})
+    file(DOWNLOAD ${GLAD_URL} ${GLAD_DIR}/glad.zip SHOW_PROGRESS
+        STATUS status)
+
+    list(GET status 0 error_code)
+
+    if (NOT ${error_code} EQUAL 0)
+        file(REMOVE_RECURSE ${GLAD_DIR})
+        message(FATAL_ERROR "Failed to download GLAD, generate it through: 'https://gen.glad.sh/#generator=c&api=gl%3D4.6&profile=gl%3Dcore%2Cgles1%3Dcommon&options=LOADER' and place it in ${GLAD_DIR}")
+    endif()
+
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xzf glad.zip
+        WORKING_DIRECTORY ${GLAD_DIR}
+    )
+
+    file(REMOVE ${GLAD_DIR}/glad.zip)
+endif()
+
+add_library(glad STATIC ${GLAD_DIR}/src/gl.c)
+target_include_directories(glad PUBLIC ${GLAD_DIR}/include)
 
 add_subdirectory(${JacekLib_DIR})
 
@@ -73,7 +83,7 @@ foreach(package ${OpenGLPackages})
 endforeach()
 
 ### Project setup
-add_executable(${PROJECT_NAME} main.cpp ${GLAD_SRC} ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES} ${GLAD_SRC})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${HEADERS})
 target_link_libraries(${PROJECT_NAME} glfw GL JacekLib glad)
