@@ -44,6 +44,11 @@ namespace Resources {
         const std::filesystem::path basic_vertex = "res/shaders/basic.vert";
         const std::filesystem::path basic_fragment = "res/shaders/basic.frag";
     }
+
+    namespace Textures {
+        const std::filesystem::path container = "res/textures/container.png";
+        const std::filesystem::path face = "res/textures/grandfather-face.png";
+    }
 }
 
 struct Box {
@@ -232,8 +237,8 @@ int run(jac::Arguments& arg, jac::Arguments& env)
 
     // Loading texture
 
-    Texture texture("res/textures/container.png");
-    Texture texture2("res/textures/braun.png");
+    Texture texture(Resources::Textures::container);
+    Texture texture2(Resources::Textures::face);
     
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
