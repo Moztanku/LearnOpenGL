@@ -209,7 +209,7 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-    std::vector<Box> boxes(100, Box{});
+    std::vector<Box> boxes(1000, Box{});
 
     for (auto& box : boxes)
     {
@@ -229,7 +229,6 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     va.AddBuffer(vb, layout);
 
     // Wireframe mode
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Loading texture
 
@@ -249,14 +248,26 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     auto video_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
     glm::mat4 projection = glm::mat4(1.0f);
-    projection = glm::perspective(glm::radians(45.f), static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height), 0.1f, 100.f);
+    // projection = glm::perspective(glm::radians(45.f), static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height), 0.1f, 100.f);
 
     //###
     double time;
 
     glEnable(GL_DEPTH_TEST);
+    glfwSetInputMode(window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     State state;
+    
+    const auto scroll_callback = [](GLFWwindow* window, double xoffset, double yoffset)
+    {
+        float& fov = State::fov();
+
+        fov -= static_cast<float>(yoffset);
+
+        fov = std::clamp(fov, 1.0f, 90.0f);
+    };
+    glfwSetScrollCallback(window.get(), scroll_callback);
+    
     while(!glfwWindowShouldClose(window.get()))
     {
         time = glfwGetTime();
@@ -278,12 +289,19 @@ int run(jac::Arguments& arg, jac::Arguments& env)
 
         va.Bind();
 
-        view = glm::translate(glm::mat4{1.f}, glm::vec3(0.f, 0.f, -3.f));
-        view = glm::translate(view, glm::vec3(state.posX, state.posY, state.posZ));
+        float x = sinf(time * M_PI);
+        float z = cosf(time * M_PI);
+
+        view = glm::lookAt(
+            state.cameraPos,
+            state.cameraPos + state.cameraFront,
+            state.cameraUp
+        );
         shader.SetUniformM("uView", view);
-        projection = glm::perspective(glm::radians(90.f), static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height), 0.1f, 100.f);
-        projection = glm::rotate(projection, state.angleX, glm::vec3(1.f, 0.f, 0.f));
-        projection = glm::rotate(projection, state.angleY, glm::vec3(0.f, 1.f, 0.f));
+
+        projection = glm::perspective(glm::radians(state.fov()), static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height), 0.1f, 100.f);
+        // projection = glm::rotate(projection, state.angleX, glm::vec3(1.f, 0.f, 0.f));
+        // projection = glm::rotate(projection, state.angleY, glm::vec3(0.f, 1.f, 0.f));
         shader.SetUniformM("uProjection", projection);
 
         for (const auto& box : boxes)
@@ -294,6 +312,8 @@ int run(jac::Arguments& arg, jac::Arguments& env)
         glfwSwapBuffers(window.get());
         glfwPollEvents();
         while(glfwGetTime() - time < 1.0 / 60.0);
+
+        const uint fps = 1.0 / (glfwGetTime() - time);
     }
 
     glfwTerminate();
