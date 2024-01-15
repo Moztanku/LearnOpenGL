@@ -16,6 +16,7 @@ struct State
 {
     float mix = 0.2f;
     float Δt = 0.0f;
+    float cameraSpeed = 2.0f;
 
     Camera camera{
         glm::vec3{0.f,0.f,3.f},
@@ -48,7 +49,7 @@ StateModifier moveForward(const float amount) {
         const glm::vec3 move{
             0.f,
             0.f,
-            amount * state.Δt
+            amount * state.Δt * state.cameraSpeed
         };
 
         state.camera.move(move);
@@ -59,7 +60,7 @@ StateModifier moveUp(const float amount) {
     return [amount](State& state) {
         const glm::vec3 move{
             0.f,
-            amount * state.Δt,
+            amount * state.Δt * state.cameraSpeed,
             0.f
         };
 
@@ -70,13 +71,20 @@ StateModifier moveUp(const float amount) {
 StateModifier strafe(const float amount) {
     return [amount](State& state) {
         const glm::vec3 move{
-            amount * state.Δt,
+            amount * state.Δt * state.cameraSpeed,
             0.f,
             0.f
         };
 
         state.camera.move(move);
     };
+}
+
+StateModifier setCameraSpeed(const float amount) {
+    return [amount](State& state) {
+        state.cameraSpeed = amount;
+    };
+
 }
 
 void toggleWireFrame(State& state)
@@ -88,10 +96,20 @@ void toggleWireFrame(State& state)
 
 void resetCamera(State& state)
 {
-    state.camera.reset();
+    state.camera  = Camera{
+        glm::vec3{0.f,0.f,3.f},
+        glm::vec3{0.f,0.f,-1.f},
+        glm::vec3{0.f,1.f,0.f}
+    };
 }
 
-const std::array<Input, 10> inputs_each_frame {
+StateModifier roll(const float amount) {
+    return [amount](State& state) {
+        state.camera.rotate({0.f, 0.f, amount * state.Δt});
+    };
+}
+
+const std::array<Input, 11> inputs_each_frame {
     Input{GLFW_KEY_ESCAPE, closeWindow},
     Input{GLFW_KEY_UP, changeMix(.5f)},
     Input{GLFW_KEY_DOWN, changeMix(-.5f)},
@@ -100,12 +118,20 @@ const std::array<Input, 10> inputs_each_frame {
     Input{GLFW_KEY_A, strafe(-1.f)},
     Input{GLFW_KEY_D, strafe(1.f)},
     Input{GLFW_KEY_SPACE, moveUp(1.f)},
-    Input{GLFW_KEY_LEFT_SHIFT, moveUp(-1.f)}
+    Input{GLFW_KEY_LEFT_ALT, moveUp(-1.f)},
+    Input{GLFW_KEY_Q, roll(-60.f)},
+    Input{GLFW_KEY_E, roll(60.f)}
 };
 
-const std::array<Input, 2> inputs_on_release {
+const std::array<Input, 2> inputs_on_press {
     Input{GLFW_KEY_TAB, toggleWireFrame},
-    Input{GLFW_KEY_R, resetCamera}
+    Input{GLFW_KEY_LEFT_SHIFT, setCameraSpeed(5.0f)}
+};
+
+const std::array<Input, 3> inputs_on_release {
+    Input{GLFW_KEY_TAB, toggleWireFrame},
+    Input{GLFW_KEY_R, resetCamera},
+    Input{GLFW_KEY_LEFT_SHIFT, setCameraSpeed(2.0f)}
 };
 
 
@@ -124,16 +150,28 @@ void process_input(GLFWwindow* window, State& state)
             input.modifier(state);
     }
 
-    static int last_key = GLFW_KEY_UNKNOWN;
+    static int last_key_press = GLFW_KEY_UNKNOWN;
+    for (const auto& input : inputs_on_press)
+    {
+        if(last_key_press == GLFW_KEY_UNKNOWN && glfwGetKey(window, input.glfw_key) == GLFW_PRESS) {
+            input.modifier(state);
+            last_key_press = input.glfw_key;
+        }
+
+        if(last_key_press == input.glfw_key && glfwGetKey(window, input.glfw_key) == GLFW_RELEASE)
+            last_key_press = GLFW_KEY_UNKNOWN;
+    }
+
+    static int last_key_release = GLFW_KEY_UNKNOWN;
     for (const auto& input : inputs_on_release)
     {
-        if(glfwGetKey(window, input.glfw_key) == GLFW_PRESS)
-            last_key = input.glfw_key;
+        if(last_key_release && glfwGetKey(window, input.glfw_key) == GLFW_PRESS)
+            last_key_release = input.glfw_key;
 
-        if(glfwGetKey(window, input.glfw_key) == GLFW_RELEASE && last_key == input.glfw_key)
+        if(last_key_release == input.glfw_key && glfwGetKey(window, input.glfw_key) == GLFW_RELEASE)
         {
             input.modifier(state);
-            last_key = GLFW_KEY_UNKNOWN;
+            last_key_release = GLFW_KEY_UNKNOWN;
         }
     }
 
@@ -148,8 +186,18 @@ void process_input(GLFWwindow* window, State& state)
     last_x = new_x;
     last_y = new_y;
 
+    static bool first_mouse = true;
+
+    if(first_mouse)
+    {
+        last_x = new_x;
+        last_y = new_y;
+        first_mouse = false;
+        return;
+    }
+
     if (xΔ != 0.0 || yΔ != 0.0)
     {
-        state.camera.rotate({xΔ, yΔ});
+        state.camera.rotate({xΔ, yΔ, 0.f});
     }
 }

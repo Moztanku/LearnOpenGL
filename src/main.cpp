@@ -216,7 +216,7 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-    std::vector<Box> boxes(1000, Box{});
+    std::vector<Box> boxes(10000, Box{});
 
     for (size_t i = 0; i < 10; i++)
         for (size_t j = 0; j < 10; j++)
@@ -286,12 +286,9 @@ int run(jac::Arguments& arg, jac::Arguments& env)
 
         // Draw triangle
         shader.Bind();
-        // shader.SetUniform("uOffset", cosf(time * M_PI) / 8.f, sinf(time * M_PI) / 8.f, 0.0f);
         shader.SetUniform("uMix", state.mix);
-
         texture.Bind(0);
         shader.SetUniform("uTexture_0", 0);
-
         texture2.Bind(1);
         shader.SetUniform("uTexture_1", 1);
 
@@ -314,7 +311,8 @@ int run(jac::Arguments& arg, jac::Arguments& env)
         while(glfwGetTime() - time < 1.0 / 60.0);
 
         const uint fps = 1.0 / (glfwGetTime() - time);
-        // std::cout << '\r' << std::format("FPS: {}, XYZ: {} {} {}", fps, state.cameraPos.x, state.cameraPos.y, state.cameraPos.z) << std::flush;
+        const auto pos = state.camera.getPosition();
+        std::cout << '\r' << std::format("FPS: {}, XYZ: {} {} {}", fps, pos.x, pos.y, pos.z) << std::flush;
     }
 
     glfwTerminate();
