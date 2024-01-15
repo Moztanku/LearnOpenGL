@@ -84,6 +84,8 @@ float randFloat()
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 }
 
+Camera* global_camera_ptr;
+
 /**
  * @brief Starting point, function called by jac::main in main.hpp, contains the program loop
  * 
@@ -216,13 +218,24 @@ int run(jac::Arguments& arg, jac::Arguments& env)
 
     std::vector<Box> boxes(1000, Box{});
 
-    for (auto& box : boxes)
-    {
-        box.position = glm::vec3(randFloat() * 10.f - 5.f, randFloat() * 10.f - 5.f, randFloat() * 10.f - 5.f);
-        box.scale = randFloat() * 0.5f + 0.5f;
-        box.rotation = glm::vec3(randFloat() * 360.f, randFloat() * 360.f, randFloat() * 360.f);
-        box.color = glm::vec3(randFloat(), randFloat(), randFloat());
-    }
+    for (size_t i = 0; i < 10; i++)
+        for (size_t j = 0; j < 10; j++)
+            for (size_t k = 0; k < 10; k++)
+            {
+                auto& box = boxes.at(i + j*10 + k*100);
+
+                box.rotation = glm::vec3(randFloat() * 360.f, randFloat() * 360.f, randFloat() * 360.f);
+                box.scale = 1.0f;
+
+                const float r = 5.f;
+                const float x = cosf(2.0f * M_PI * i / 10) * r;
+                const float y = sinf(2.0f * M_PI * j / 10) * r;
+                const float z =
+                    -5.f + (5.f * i) / 10;
+
+                box.position = glm::vec3{x,y,z};
+                box.color = glm::vec3(randFloat(), randFloat(), randFloat());
+            }
 
     VertexBuffer vb(vertices, sizeof(vertices));
     VertexBufferLayout layout;
@@ -244,17 +257,6 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(-55.f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-    glm::mat4 view = glm::mat4(1.0f);
-    view = glm::translate(view, glm::vec3(0.f, 0.f, -3.f));
-
-    auto video_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
-    glm::mat4 projection = glm::mat4(1.0f);
-    // projection = glm::perspective(glm::radians(45.f), static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height), 0.1f, 100.f);
-
     //###
     double time;
 
@@ -263,13 +265,14 @@ int run(jac::Arguments& arg, jac::Arguments& env)
 
     State state;
     
+    global_camera_ptr = &state.camera;
     const auto scroll_callback = [](GLFWwindow* window, double xoffset, double yoffset)
     {
-        float& fov = State::fov();
+        constexpr bool invertScroll = false;
 
-        fov -= static_cast<float>(yoffset);
+        const float value = static_cast<float>(yoffset) * (invertScroll ? 1.f : -1.f);
 
-        fov = std::clamp(fov, 1.0f, 90.0f);
+        global_camera_ptr->changeFov(value);
     };
     glfwSetScrollCallback(window.get(), scroll_callback);
     
@@ -297,17 +300,9 @@ int run(jac::Arguments& arg, jac::Arguments& env)
         float x = sinf(time * M_PI);
         float z = cosf(time * M_PI);
 
-        view = glm::lookAt(
-            state.cameraPos,
-            state.cameraPos + state.cameraFront,
-            state.cameraUp
-        );
-        shader.SetUniformM("uView", view);
+        shader.SetUniformM("uView", state.camera.getView());
 
-        projection = glm::perspective(glm::radians(state.fov()), static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height), 0.1f, 100.f);
-        // projection = glm::rotate(projection, state.angleX, glm::vec3(1.f, 0.f, 0.f));
-        // projection = glm::rotate(projection, state.angleY, glm::vec3(0.f, 1.f, 0.f));
-        shader.SetUniformM("uProjection", projection);
+        shader.SetUniformM("uProjection", state.camera.getProjection());
 
         for (const auto& box : boxes)
         {
@@ -319,6 +314,7 @@ int run(jac::Arguments& arg, jac::Arguments& env)
         while(glfwGetTime() - time < 1.0 / 60.0);
 
         const uint fps = 1.0 / (glfwGetTime() - time);
+        // std::cout << '\r' << std::format("FPS: {}, XYZ: {} {} {}", fps, state.cameraPos.x, state.cameraPos.y, state.cameraPos.z) << std::flush;
     }
 
     glfwTerminate();

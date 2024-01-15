@@ -10,22 +10,17 @@
 #include <iostream>
 #include <format>
 
+#include "Renderer/Camera.hpp"
+
 struct State 
 {
     float mix = 0.2f;
     float Δt = 0.0f;
 
-    // Camera
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    float pitch = 0.0f;
-    float yaw = 0.0f;
-
-    static float& fov() {
-        static float fov = 45.0f;
-        return fov;
+    Camera camera{
+        glm::vec3{0.f,0.f,3.f},
+        glm::vec3{0.f,0.f,-1.f},
+        glm::vec3{0.f,1.f,0.f}
     };
 };
 
@@ -50,13 +45,37 @@ StateModifier changeMix(const float amount) {
 
 StateModifier moveForward(const float amount) {
     return [amount](State& state) {
-        state.cameraPos += state.cameraFront * amount * state.Δt;
+        const glm::vec3 move{
+            0.f,
+            0.f,
+            amount * state.Δt
+        };
+
+        state.camera.move(move);
+    };
+}
+
+StateModifier moveUp(const float amount) {
+    return [amount](State& state) {
+        const glm::vec3 move{
+            0.f,
+            amount * state.Δt,
+            0.f
+        };
+
+        state.camera.move(move);
     };
 }
 
 StateModifier strafe(const float amount) {
     return [amount](State& state) {
-        state.cameraPos += glm::normalize(glm::cross(state.cameraFront, state.cameraUp)) * amount * state.Δt;
+        const glm::vec3 move{
+            amount * state.Δt,
+            0.f,
+            0.f
+        };
+
+        state.camera.move(move);
     };
 }
 
@@ -69,25 +88,19 @@ void toggleWireFrame(State& state)
 
 void resetCamera(State& state)
 {
-    state.cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    state.cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    state.cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    state.pitch = 0.0f;
-    state.yaw = -90.0f;
-    state.fov() = 45.0f;
+    state.camera.reset();
 }
 
-const std::array<Input, 9> inputs_each_frame {
+const std::array<Input, 10> inputs_each_frame {
     Input{GLFW_KEY_ESCAPE, closeWindow},
-    Input{GLFW_KEY_UP, changeMix(0.5f)},
-    Input{GLFW_KEY_DOWN, changeMix(-0.5f)},
-    Input{GLFW_KEY_W, moveForward(1.0f)},
-    Input{GLFW_KEY_S, moveForward(-1.0f)},
-    Input{GLFW_KEY_A, strafe(-1.0f)},
-    Input{GLFW_KEY_D, strafe(1.0f)}
-    // Input{GLFW_KEY_SPACE, accelerate(glm::vec3{0.f, 0.f, 0.01f})},
-    // Input{GLFW_KEY_LEFT_SHIFT, accelerate(glm::vec3{0.f, 0.f, -0.01f})}
+    Input{GLFW_KEY_UP, changeMix(.5f)},
+    Input{GLFW_KEY_DOWN, changeMix(-.5f)},
+    Input{GLFW_KEY_W, moveForward(1.f)},
+    Input{GLFW_KEY_S, moveForward(-1.f)},
+    Input{GLFW_KEY_A, strafe(-1.f)},
+    Input{GLFW_KEY_D, strafe(1.f)},
+    Input{GLFW_KEY_SPACE, moveUp(1.f)},
+    Input{GLFW_KEY_LEFT_SHIFT, moveUp(-1.f)}
 };
 
 const std::array<Input, 2> inputs_on_release {
@@ -135,24 +148,8 @@ void process_input(GLFWwindow* window, State& state)
     last_x = new_x;
     last_y = new_y;
 
-    constexpr float sensitivity = 0.1f;
-
-    constexpr bool invert_x = false;
-    constexpr bool invert_y = false;
-
     if (xΔ != 0.0 || yΔ != 0.0)
     {
-        state.yaw += xΔ * sensitivity * (invert_x ? -1.0f : 1.0f);
-        state.pitch += yΔ * sensitivity * (invert_y ? 1.0f : -1.0f);
-
-        state.yaw = std::fmod(state.yaw, 360.0f);
-        state.pitch = std::clamp(state.pitch, -89.0f, 89.0f);
-
-        glm::vec3 dir;
-        dir.x = cos(glm::radians(state.yaw)) * cos(glm::radians(state.pitch));
-        dir.y = sin(glm::radians(state.pitch));
-        dir.z = sin(glm::radians(state.yaw)) * cos(glm::radians(state.pitch));
-
-        state.cameraFront = glm::normalize(dir);
+        state.camera.rotate({xΔ, yΔ});
     }
 }
