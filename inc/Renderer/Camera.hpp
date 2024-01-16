@@ -11,56 +11,47 @@
 
 class Camera
 {
+        using vector = glm::vec3;
+        using normal = glm::vec3;
+        using angle = glm::float32;
+        using matrix = glm::mat4;
     public:
-        Camera(glm::vec3 position, glm::vec3 forward, glm::vec3 up) noexcept;
+        Camera(
+            vector position = {0.f,0.f,0.f},
+            normal forward = {0.f,0.f,-1.f},
+            normal up = {0.f,1.f,0.f}
+        ) noexcept;
         ~Camera() = default;
 
 
-        void move(const glm::vec3 movement) noexcept;
-        void rotate(const glm::vec2 rotation) noexcept;
+        void move(const vector movement) noexcept;
         void changeFov(const float delta) noexcept;
 
-        void rotate(const glm::vec3 rotation) noexcept
-{
-    m_yaw += rotation.x * m_sensitivityX * (m_invertX ? -1.f : 1.f);
-    m_pitch += rotation.y * m_sensitivityY * (m_invertY ? 1.f : -1.f);
-    m_roll += rotation.z;
+        void yaw(const float delta) noexcept;
+        void pitch(const float delta) noexcept;
+        void roll(const float delta) noexcept;
+        void resetRotation() noexcept;
 
-    m_yaw = std::fmod(m_yaw, 360.f);
-    m_pitch = std::clamp(m_pitch, -89.f,89.f );
-    m_roll = std::fmod(m_roll, 360.f);
+        [[nodiscard]] inline const matrix& getView() const noexcept { return m_view; }
+        [[nodiscard]] inline const matrix& getProjection() const noexcept { return m_projection; }
 
-    glm::vec3 dir;
-    dir.x = cosf(glm::radians(m_yaw)) * cosf(glm::radians(m_pitch));
-    dir.y = sinf(glm::radians(m_pitch));
-    dir.z = sinf(glm::radians(m_yaw)) * cosf(glm::radians(m_pitch));
-
-    m_forward = glm::normalize(dir);
-
-    updateView();
-}
-
-        [[nodiscard]] inline const glm::mat4& getView() const noexcept { return m_view; }
-        [[nodiscard]] inline const glm::mat4& getProjection() const noexcept { return m_projection; }
-        [[nodiscard]] inline const glm::vec2 getRotation() const noexcept { return {m_yaw, m_pitch}; }
         [[nodiscard]] inline const glm::vec2 getSensitivity() const noexcept { return {m_sensitivityX, m_sensitivityY}; }
-        [[nodiscard]] inline const glm::vec3 getPosition() const noexcept { return m_position; }
-        [[nodiscard]] inline const glm::vec3 getForward() const noexcept { return m_forward; }
-        [[nodiscard]] inline const glm::vec3 getUp() const noexcept { return m_up; }
 
+        [[nodiscard]] inline const vector getPosition() const noexcept { return m_position; }
+        [[nodiscard]] inline const normal getForward() const noexcept { return m_forward; }
+        [[nodiscard]] inline const normal getUp() const noexcept { return m_up; }
+        [[nodiscard]] inline const normal getRight() const noexcept { return m_right; }
     private:
-        glm::vec3 m_position;
-        glm::vec3 m_forward;
-        glm::vec3 m_up;
+        vector m_position;
 
-        glm::mat4 m_view;
-        glm::mat4 m_projection;
+        normal m_forward;
+        normal m_up;
+        normal m_right;
 
-        float m_yaw = -90.f;
-        float m_pitch = 0.f;
-        float m_roll = 0.f;
+        matrix m_view;
+        matrix m_projection;
 
-        float m_fov = 75.f;
+        angle m_fov = 75.f;
 
         bool m_invertX = false;
         bool m_invertY = false;
@@ -70,6 +61,5 @@ class Camera
         const GLFWvidmode* video_mode;
 
         void updateView() noexcept;
-
         void updateProjection() noexcept;
 };

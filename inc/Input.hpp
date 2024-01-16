@@ -18,11 +18,7 @@ struct State
     float Δt = 0.0f;
     float cameraSpeed = 2.0f;
 
-    Camera camera{
-        glm::vec3{0.f,0.f,3.f},
-        glm::vec3{0.f,0.f,-1.f},
-        glm::vec3{0.f,1.f,0.f}
-    };
+    Camera camera{};
 };
 
 using StateModifier = std::function<void(State&)>;
@@ -96,16 +92,17 @@ void toggleWireFrame(State& state)
 
 void resetCamera(State& state)
 {
-    state.camera  = Camera{
-        glm::vec3{0.f,0.f,3.f},
-        glm::vec3{0.f,0.f,-1.f},
-        glm::vec3{0.f,1.f,0.f}
-    };
+    // state.camera  = Camera{
+    //     glm::vec3{0.f,0.f,3.f},
+    //     glm::vec3{0.f,0.f,-1.f},
+    //     glm::vec3{0.f,1.f,0.f}
+    // };
+    state.camera.resetRotation();
 }
 
 StateModifier roll(const float amount) {
     return [amount](State& state) {
-        state.camera.rotate({0.f, 0.f, amount * state.Δt});
+        state.camera.roll(amount * state.Δt);
     };
 }
 
@@ -198,6 +195,7 @@ void process_input(GLFWwindow* window, State& state)
 
     if (xΔ != 0.0 || yΔ != 0.0)
     {
-        state.camera.rotate({xΔ, yΔ, 0.f});
+        state.camera.pitch(yΔ);
+        state.camera.yaw(xΔ);
     }
 }

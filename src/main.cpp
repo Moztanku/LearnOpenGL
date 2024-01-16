@@ -216,26 +216,23 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
-    std::vector<Box> boxes(10000, Box{});
+    std::vector<Box> boxes(5000, Box{});
 
-    for (size_t i = 0; i < 10; i++)
-        for (size_t j = 0; j < 10; j++)
-            for (size_t k = 0; k < 10; k++)
-            {
-                auto& box = boxes.at(i + j*10 + k*100);
+    for (idx i = 0; i < boxes.size(); i++)
+    {
+        boxes[i].position = glm::vec3(randFloat() * 100.f - 50.f, randFloat() * 100.f - 50.f, randFloat() * 100.f - 50.f);
+        boxes[i].scale = randFloat() * 2.f;
+        boxes[i].rotation = glm::vec3(randFloat() * 360.f, randFloat() * 360.f, randFloat() * 360.f);
+        boxes[i].color = glm::vec3(randFloat(), randFloat(), randFloat());
+    }
 
-                box.rotation = glm::vec3(randFloat() * 360.f, randFloat() * 360.f, randFloat() * 360.f);
-                box.scale = 1.0f;
+    auto& bigBox = boxes.back();
+    bigBox.position = glm::vec3(1000.f, 1000.f, 1000.f);
+    bigBox.scale = 1000.f;
 
-                const float r = 5.f;
-                const float x = cosf(2.0f * M_PI * i / 10) * r;
-                const float y = sinf(2.0f * M_PI * j / 10) * r;
-                const float z =
-                    -5.f + (5.f * i) / 10;
-
-                box.position = glm::vec3{x,y,z};
-                box.color = glm::vec3(randFloat(), randFloat(), randFloat());
-            }
+    auto& skyBox = boxes.front();
+    skyBox.position = glm::vec3(0.f, 0.f, 0.f);
+    skyBox.scale = 5000.f;
 
     VertexBuffer vb(vertices, sizeof(vertices));
     VertexBufferLayout layout;
