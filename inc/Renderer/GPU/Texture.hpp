@@ -17,6 +17,9 @@
 
 #include "jac/type_defs.hpp"
 
+namespace Renderer::GPU
+{
+
 class Texture
 {
     public:
@@ -48,4 +51,6 @@ class Texture
 
         // TODO: Different texture wrap modes and filters
         // GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER
-};
+}; // class Texture
+
+} // namespace Renderer::GPU

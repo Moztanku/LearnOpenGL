@@ -18,7 +18,7 @@ struct State
     float Δt = 0.0f;
     float cameraSpeed = 2.0f;
 
-    Camera camera{};
+    Renderer::Camera camera{};
 };
 
 using StateModifier = std::function<void(State&)>;
@@ -134,6 +134,8 @@ const std::array<Input, 3> inputs_on_release {
 
 void process_input(GLFWwindow* window, State& state)
 {
+    glfwPollEvents();
+    
     static float last_time = glfwGetTime();
     float current_time = glfwGetTime();
 

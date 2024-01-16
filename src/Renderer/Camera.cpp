@@ -1,122 +1,132 @@
 #include "Renderer/Camera.hpp"
 
-Camera::Camera(vector position, normal forward, normal up) noexcept :
-    m_position{position},
-    m_forward{forward},
-    m_up{up},
-    m_right{glm::normalize(glm::cross(m_forward, m_up))},
-    video_mode{glfwGetVideoMode(glfwGetPrimaryMonitor())}
-{
-    updateView();
-    updateProjection();
+namespace {
+    constexpr bool FREECAM_MODE = true;
 }
 
-void Camera::move(const vector movement) noexcept
-{
-    constexpr bool FREECAM_MODE = true;
 
-    const float z = movement.z;
-    if (z != 0.f) {
-        if constexpr (FREECAM_MODE)
-            m_position += m_forward * z;
-        else
-            m_position += glm::normalize(
-                glm::vec3{m_forward.x, 0.f, m_forward.z}
-            ) * z;
+namespace Renderer
+{
+
+    Camera::Camera(vector position, normal forward, normal up) noexcept :
+        m_position{position},
+        m_forward{forward},
+        m_up{up},
+        m_right{glm::normalize(glm::cross(m_forward, m_up))},
+        video_mode{glfwGetVideoMode(glfwGetPrimaryMonitor())}
+    {
+        updateView();
+        updateProjection();
     }
 
-    const float x = movement.x;
-    if (x != 0.f)
-        m_position += m_right * x;
+    void Camera::move(const vector movement) noexcept
+    {
+        const float z = movement.z;
+        if (z != 0.f) {
+            if constexpr (FREECAM_MODE)
+                m_position += m_forward * z;
+            else
+                m_position += glm::normalize(
+                    glm::vec3{m_forward.x, 0.f, m_forward.z}
+                ) * z;
+        }
 
-    const float y = movement.y;
-    if (y != 0.f)
-        m_position += m_up * y;
+        const float x = movement.x;
+        if (x != 0.f)
+            m_position += m_right * x;
 
-    updateView();
-}
+        const float y = movement.y;
+        if (y != 0.f)
+            m_position += m_up * y;
 
-void Camera::changeFov(const float delta) noexcept
-{
-    constexpr float minFov = 1.f;
-    constexpr float maxFov = 180.f;
+        updateView();
+    }
 
-    m_fov = std::clamp(m_fov + delta, minFov, maxFov);
+    void Camera::changeFov(const angle delta) noexcept
+    {
+        constexpr float minFov = 1.f;
+        constexpr float maxFov = 180.f;
 
-    updateProjection();
-}
+        m_fov = std::clamp(m_fov + delta, minFov, maxFov);
 
-void Camera::yaw(const float delta) noexcept 
-{
-    matrix rotation = glm::rotate(
-        glm::mat4{1.f},
-        glm::radians(delta) * m_sensitivityX * (m_invertX ? 1.f : -1.f),
-        m_up
-    );
+        updateProjection();
+    }
 
-    m_forward = glm::normalize(
-        glm::vec3{rotation * glm::vec4{m_forward, 1.f}}
-    );
+    void Camera::yaw(const angle delta) noexcept 
+    {
+        matrix rotation = glm::rotate(
+            glm::mat4{1.f},
+            glm::radians(delta) * m_sensitivityX * (m_invertX ? 1.f : -1.f),
+            m_up
+        );
 
-    m_right = glm::normalize(
-        glm::cross(m_forward, m_up)
-    );
+        m_forward = glm::normalize(
+            glm::vec3{rotation * glm::vec4{m_forward, 1.f}}
+        );
 
-    updateView();
-}
+        m_right = glm::normalize(
+            glm::cross(m_forward, m_up)
+        );
 
-void Camera::pitch(const float delta) noexcept 
-{
-    matrix rotation = glm::rotate(
-        glm::mat4{1.f},
-        glm::radians(delta) * m_sensitivityY * (m_invertY ? 1.f : -1.f),
-        m_right
-    );
+        updateView();
+    }
 
-    m_forward = glm::normalize(
-        glm::vec3{rotation * glm::vec4{m_forward, 1.f}}
-    );
+    void Camera::pitch(const angle delta) noexcept 
+    {
+        matrix rotation = glm::rotate(
+            glm::mat4{1.f},
+            glm::radians(delta) * m_sensitivityY * (m_invertY ? 1.f : -1.f),
+            m_right
+        );
 
-    m_up = glm::normalize(
-        glm::cross(m_right, m_forward)
-    );
+        m_forward = glm::normalize(
+            glm::vec3{rotation * glm::vec4{m_forward, 1.f}}
+        );
 
-    updateView();
-}
+        m_up = glm::normalize(
+            glm::cross(m_right, m_forward)
+        );
 
-void Camera::roll(const float delta) noexcept 
-{
-    matrix rotation = glm::rotate(glm::mat4{1.f}, glm::radians(delta), m_forward);
+        updateView();
+    }
 
-    m_up = glm::normalize(glm::vec3{rotation * glm::vec4{m_up, 1.f}});
-    m_right = glm::normalize(glm::cross(m_forward, m_up));
+    void Camera::roll(const angle delta) noexcept 
+    {
+        if constexpr (!FREECAM_MODE)
+            return;
 
-    updateView();
-}
+        matrix rotation = glm::rotate(glm::mat4{1.f}, glm::radians(delta), m_forward);
 
-void Camera::resetRotation() noexcept
-{
-    m_forward = glm::vec3{0.f, 0.f, -1.f};
-    m_up = glm::vec3{0.f, 1.f, 0.f};
-    m_right = glm::vec3{1.f, 0.f, 0.f};
+        m_up = glm::normalize(glm::vec3{rotation * glm::vec4{m_up, 1.f}});
+        m_right = glm::normalize(glm::cross(m_forward, m_up));
 
-    updateView();
-}
+        updateView();
+    }
 
-// Private
+    void Camera::resetRotation() noexcept
+    {
+        m_forward = glm::vec3{0.f, 0.f, -1.f};
+        m_up = glm::vec3{0.f, 1.f, 0.f};
+        m_right = glm::vec3{1.f, 0.f, 0.f};
 
-void Camera::updateView() noexcept
-{
-    m_view = glm::lookAt(m_position, m_position + m_forward, m_up);
-}
+        updateView();
+    }
 
-void Camera::updateProjection() noexcept
-{
-    m_projection = glm::perspective(
-        glm::radians(m_fov),
-        static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height),
-        0.1f,
-        20000.f
-    );
-}
+    /**   PRIVATE   **/
 
+    void Camera::updateView() noexcept
+    {
+        m_view = glm::lookAt(m_position, m_position + m_forward, m_up);
+    }
+
+    void Camera::updateProjection() noexcept
+    {
+        m_projection = glm::perspective(
+            glm::radians(m_fov),
+            static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height),
+            0.1f,
+            20000.f
+        );
+    }
+
+} // namespace Renderer::GPU

@@ -19,12 +19,12 @@
 #include <iostream>
 
 #include "Input.hpp"
-#include "Renderer/Shader.hpp"
-#include "Renderer/VertexArray.hpp"
-#include "Renderer/VertexBuffer.hpp"
-#include "Renderer/IndexBuffer.hpp"
-#include "Renderer/VertexBufferLayout.hpp"
-#include "Renderer/Texture.hpp"
+#include "Renderer/GPU/Shader.hpp"
+#include "Renderer/GPU/VertexArray.hpp"
+#include "Renderer/GPU/VertexBuffer.hpp"
+#include "Renderer/GPU/IndexBuffer.hpp"
+#include "Renderer/GPU/VertexBufferLayout.hpp"
+#include "Renderer/GPU/Texture.hpp"
 
 #include "jac/main.hpp"
 #include "jac/type_defs.hpp"
@@ -33,6 +33,13 @@
     #define OpenGL_VERSION_MAJOR 3
     #define OpenGL_VERSION_MINOR 3
 #endif
+
+using Renderer::Camera;
+using Renderer::GPU::Shader;
+using Renderer::GPU::Texture;
+using Renderer::GPU::VertexArray;
+using Renderer::GPU::VertexBuffer;
+using Renderer::GPU::VertexBufferLayout;
 
 void framebuffer_size_callback(GLFWwindow* window, const int width, const int height)
 {
@@ -304,7 +311,6 @@ int run(jac::Arguments& arg, jac::Arguments& env)
         }
 
         glfwSwapBuffers(window.get());
-        glfwPollEvents();
         while(glfwGetTime() - time < 1.0 / 60.0);
 
         const uint fps = 1.0 / (glfwGetTime() - time);

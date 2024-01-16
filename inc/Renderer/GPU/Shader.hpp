@@ -18,6 +18,9 @@
 
 #include "jac/type_defs.hpp"
 
+namespace Renderer::GPU
+{
+
 class Shader
 {
     public:
@@ -39,4 +42,6 @@ class Shader
         std::unordered_map<std::string, uint> m_UniformLocationCache;
 
         uint GetUniformLocation(const std::string& name);
-};
+}; // class Shader
+
+} // namespace Renderer::GPU

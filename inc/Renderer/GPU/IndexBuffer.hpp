@@ -12,6 +12,9 @@
 
 #include "jac/type_defs.hpp"
 
+namespace Renderer::GPU
+{
+
 class IndexBuffer
 {
     public:
@@ -25,4 +28,6 @@ class IndexBuffer
     private:
         uint m_id;
         uint m_Count;
-};
+}; // class IndexBuffer
+
+} // namespace Renderer::GPU
