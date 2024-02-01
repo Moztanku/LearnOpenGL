@@ -38,8 +38,6 @@ namespace Renderer
             [[nodiscard]] inline const matrix& getView() const noexcept { return m_view; }
             [[nodiscard]] inline const matrix& getProjection() const noexcept { return m_projection; }
 
-            [[nodiscard]] inline const glm::vec2 getSensitivity() const noexcept { return {m_sensitivityX, m_sensitivityY}; }
-
             [[nodiscard]] inline const vector getPosition() const noexcept { return m_position; }
             [[nodiscard]] inline const normal getForward() const noexcept { return m_forward; }
             [[nodiscard]] inline const normal getUp() const noexcept { return m_up; }
@@ -55,11 +53,6 @@ namespace Renderer
             matrix m_projection;
 
             angle m_fov = 75.f;
-
-            bool m_invertX = false;
-            bool m_invertY = false;
-            float m_sensitivityX = 0.1f;
-            float m_sensitivityY = 0.1f;
 
             const GLFWvidmode* video_mode;
 

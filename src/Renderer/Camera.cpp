@@ -4,7 +4,6 @@ namespace {
     constexpr bool FREECAM_MODE = true;
 }
 
-
 namespace Renderer
 {
 
@@ -15,6 +14,7 @@ namespace Renderer
         m_right{glm::normalize(glm::cross(m_forward, m_up))},
         video_mode{glfwGetVideoMode(glfwGetPrimaryMonitor())}
     {
+        glEnable(GL_DEPTH_TEST);
         updateView();
         updateProjection();
     }
@@ -56,7 +56,7 @@ namespace Renderer
     {
         matrix rotation = glm::rotate(
             glm::mat4{1.f},
-            glm::radians(delta) * m_sensitivityX * (m_invertX ? 1.f : -1.f),
+            glm::radians(-delta),
             m_up
         );
 
@@ -73,19 +73,43 @@ namespace Renderer
 
     void Camera::pitch(const angle delta) noexcept 
     {
-        matrix rotation = glm::rotate(
-            glm::mat4{1.f},
-            glm::radians(delta) * m_sensitivityY * (m_invertY ? 1.f : -1.f),
-            m_right
-        );
+        if constexpr (FREECAM_MODE) {
+            matrix rotation = glm::rotate(
+                glm::mat4{1.f},
+                glm::radians(-delta),
+                m_right
+            );
 
-        m_forward = glm::normalize(
-            glm::vec3{rotation * glm::vec4{m_forward, 1.f}}
-        );
+            m_forward = glm::normalize(
+                glm::vec3{rotation * glm::vec4{m_forward, 1.f}}
+            );
 
-        m_up = glm::normalize(
-            glm::cross(m_right, m_forward)
-        );
+            m_up = glm::normalize(
+                glm::cross(m_right, m_forward)
+            );
+        } else {
+            constexpr float minPitch = -89.f;
+            constexpr float maxPitch = 89.f;
+
+            const float pitch = glm::degrees(glm::asin(m_forward.y));
+            const float newPitch = glm::clamp(
+                pitch - delta,
+                minPitch,
+                maxPitch
+            );
+
+            const float deltaPitch = newPitch - pitch;
+
+            matrix rotation = glm::rotate(
+                glm::mat4{1.f},
+                glm::radians(deltaPitch),
+                m_right
+            );
+
+            m_forward = glm::normalize(
+                glm::vec3{rotation * glm::vec4{m_forward, 1.f}}
+            );
+        }
 
         updateView();
     }
@@ -124,7 +148,7 @@ namespace Renderer
         m_projection = glm::perspective(
             glm::radians(m_fov),
             static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height),
-            0.1f,
+            0.5f,
             20000.f
         );
     }

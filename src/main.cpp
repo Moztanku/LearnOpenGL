@@ -17,8 +17,10 @@
 
 #include <memory>
 #include <iostream>
+#include <format>
 
 #include "Input.hpp"
+#include "Renderer/Camera.hpp"
 #include "Renderer/GPU/Shader.hpp"
 #include "Renderer/GPU/VertexArray.hpp"
 #include "Renderer/GPU/VertexBuffer.hpp"
@@ -90,8 +92,6 @@ float randFloat()
     }
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 }
-
-Camera* global_camera_ptr;
 
 /**
  * @brief Starting point, function called by jac::main in main.hpp, contains the program loop
@@ -250,8 +250,6 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     VertexArray va;
     va.AddBuffer(vb, layout);
 
-    // Wireframe mode
-
     // Loading texture
 
     Texture texture(Resources::Textures::container);
@@ -264,26 +262,111 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     //###
     double time;
 
-    glEnable(GL_DEPTH_TEST);
-    glfwSetInputMode(window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    struct State 
+    {
+        float mix = 0.2f;
+        float cameraSpeed = 2.0f;
+
+        Renderer::Camera camera{};
+    };
 
     State state;
-    
-    global_camera_ptr = &state.camera;
-    const auto scroll_callback = [](GLFWwindow* window, double xoffset, double yoffset)
-    {
-        constexpr bool invertScroll = false;
 
-        const float value = static_cast<float>(yoffset) * (invertScroll ? 1.f : -1.f);
+    using Input = Input<State>;
+    Input input{window.get(), state};
 
-        global_camera_ptr->changeFov(value);
+    input.setKeyHandler(GLFW_KEY_ESCAPE, {
+        .pressed = [](State&, const float) {
+            glfwSetWindowShouldClose(glfwGetCurrentContext(), true);
+        }
+    });
+
+    auto move = [](const glm::vec3& movement){
+        return [movement](State& state, const float delta) {
+            state.camera.move(movement * delta * state.cameraSpeed);
+        };
     };
-    glfwSetScrollCallback(window.get(), scroll_callback);
+
+    input.setKeyHandler(GLFW_KEY_W, {
+        .held = move(glm::vec3{0.f, 0.f, 1.f})
+    });
+
+    input.setKeyHandler(GLFW_KEY_S, {
+        .held = move(glm::vec3{0.f, 0.f, -1.f})
+    });
+
+    input.setKeyHandler(GLFW_KEY_A, {
+        .held = move(glm::vec3{-1.f, 0.f, 0.f})
+    });
+
+    input.setKeyHandler(GLFW_KEY_D, {
+        .held = move(glm::vec3{1.f, 0.f, 0.f})
+    });
+
+    auto roll = [](const float amount){
+        return [amount](State& state, const float delta) {
+            state.camera.roll(amount * delta * state.cameraSpeed);
+        };
+    };
+
+    input.setKeyHandler(GLFW_KEY_Q, {
+        .held = roll(-10.f)
+    });
+
+    input.setKeyHandler(GLFW_KEY_E, {
+        .held = roll(10.f)
+    });
+
+    input.setKeyHandler(GLFW_KEY_LEFT_SHIFT, {
+        .pressed = [](State& state, const float) {
+            state.cameraSpeed = 10.f;
+        },
+        .released = [](State& state, const float) {
+            state.cameraSpeed = 2.f;
+        }
+    });
+
+    input.setKeyHandler(GLFW_KEY_TAB, {
+        .pressed = [](State&, const float) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        },
+        .released = [](State&, const float) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+    });
+
+    input.setKeyHandler(GLFW_KEY_UP, {
+        .held = [](State& state, const float delta) {
+            state.mix = std::clamp(state.mix + delta, 0.f, 1.f);
+        }
+    });
+
+    input.setKeyHandler(GLFW_KEY_DOWN, {
+        .held = [](State& state, const float delta) {
+            state.mix = std::clamp(state.mix - delta, 0.f, 1.f);
+        }
+    });
+
+    input.setMouseHandler([](State& state, const glm::vec2 delta, const glm::vec2 position) {
+        glm::vec3 m_sensitivity{0.1f, 0.1f, 0.1f};
+        glm::bvec3 m_invese{false, false, false};
+
+        const glm::vec2 rotation =
+            delta * glm::vec2{m_sensitivity.x, m_sensitivity.y};
+
+        state.camera.yaw(rotation.x * (m_invese.x ? -1.f : 1.f));
+        state.camera.pitch(rotation.y * (m_invese.y ? -1.f : 1.f));
+    });
+
+    input.setMouseScrollHandler([](State& state, const float delta) {
+        state.camera.changeFov(-delta);
+    });
     
     while(!glfwWindowShouldClose(window.get()))
     {
         time = glfwGetTime();
-        process_input(window.get(), state);
+
+        input.update();
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -315,7 +398,10 @@ int run(jac::Arguments& arg, jac::Arguments& env)
 
         const uint fps = 1.0 / (glfwGetTime() - time);
         const auto pos = state.camera.getPosition();
-        std::cout << '\r' << std::format("FPS: {}, XYZ: {} {} {}", fps, pos.x, pos.y, pos.z) << std::flush;
+        std::cout << 
+            '\r' << std::string(80, ' ') <<
+            '\r' << std::format("FPS: {}, XYZ: {} {} {}", fps, pos.x, pos.y, pos.z) <<
+            std::flush;
     }
 
     glfwTerminate();

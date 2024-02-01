@@ -1,203 +1,200 @@
 #pragma once
 
+#include <iostream>
+#include <functional>
+#include <unordered_map>
+
 #include <GLFW/glfw3.h>
 
 #include <glm/vec3.hpp>
 
-#include <array>
-#include <algorithm>
-#include <functional>
-#include <iostream>
-#include <format>
-
 #include "Renderer/Camera.hpp"
 
-struct State 
+#include "jac/type_defs.hpp"
+
+template <typename State>
+class Input
 {
-    float mix = 0.2f;
-    float Δt = 0.0f;
-    float cameraSpeed = 2.0f;
+    using Key = int;
+    using StateModifier = std::function<void(State&, const float)>;
+    using MouseHandler = std::function<void(State&, const glm::vec2, const glm::vec2)>;
+    using MouseScrollHandler = std::function<void(State&, const float)>;
 
-    Renderer::Camera camera{};
-};
+    inline static State* state_ptr = nullptr;
+    inline static MouseScrollHandler scrollHandler = nullptr;
 
-using StateModifier = std::function<void(State&)>;
-
-struct Input {
-    int glfw_key = GLFW_KEY_UNKNOWN;
-    StateModifier modifier = nullptr;
-};
-
-void closeWindow(State& state)
-{
-    glfwSetWindowShouldClose(glfwGetCurrentContext(), true);
-}
-
-StateModifier changeMix(const float amount) {
-    return [amount](State& state) {
-        state.mix += amount * state.Δt;
-        state.mix = std::clamp(state.mix, 0.0f, 1.0f);
-    };
-}
-
-StateModifier moveForward(const float amount) {
-    return [amount](State& state) {
-        const glm::vec3 move{
-            0.f,
-            0.f,
-            amount * state.Δt * state.cameraSpeed
+    public:
+        struct KeyHandler {
+            StateModifier pressed{nullptr};
+            StateModifier held{nullptr};
+            StateModifier released{nullptr};
         };
 
-        state.camera.move(move);
-    };
-}
-
-StateModifier moveUp(const float amount) {
-    return [amount](State& state) {
-        const glm::vec3 move{
-            0.f,
-            amount * state.Δt * state.cameraSpeed,
-            0.f
-        };
-
-        state.camera.move(move);
-    };
-}
-
-StateModifier strafe(const float amount) {
-    return [amount](State& state) {
-        const glm::vec3 move{
-            amount * state.Δt * state.cameraSpeed,
-            0.f,
-            0.f
-        };
-
-        state.camera.move(move);
-    };
-}
-
-StateModifier setCameraSpeed(const float amount) {
-    return [amount](State& state) {
-        state.cameraSpeed = amount;
-    };
-
-}
-
-void toggleWireFrame(State& state)
-{
-    static bool wireframe = false;
-    wireframe = !wireframe;
-    glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-}
-
-void resetCamera(State& state)
-{
-    // state.camera  = Camera{
-    //     glm::vec3{0.f,0.f,3.f},
-    //     glm::vec3{0.f,0.f,-1.f},
-    //     glm::vec3{0.f,1.f,0.f}
-    // };
-    state.camera.resetRotation();
-}
-
-StateModifier roll(const float amount) {
-    return [amount](State& state) {
-        state.camera.roll(amount * state.Δt);
-    };
-}
-
-const std::array<Input, 11> inputs_each_frame {
-    Input{GLFW_KEY_ESCAPE, closeWindow},
-    Input{GLFW_KEY_UP, changeMix(.5f)},
-    Input{GLFW_KEY_DOWN, changeMix(-.5f)},
-    Input{GLFW_KEY_W, moveForward(1.f)},
-    Input{GLFW_KEY_S, moveForward(-1.f)},
-    Input{GLFW_KEY_A, strafe(-1.f)},
-    Input{GLFW_KEY_D, strafe(1.f)},
-    Input{GLFW_KEY_SPACE, moveUp(1.f)},
-    Input{GLFW_KEY_LEFT_ALT, moveUp(-1.f)},
-    Input{GLFW_KEY_Q, roll(-60.f)},
-    Input{GLFW_KEY_E, roll(60.f)}
-};
-
-const std::array<Input, 2> inputs_on_press {
-    Input{GLFW_KEY_TAB, toggleWireFrame},
-    Input{GLFW_KEY_LEFT_SHIFT, setCameraSpeed(5.0f)}
-};
-
-const std::array<Input, 3> inputs_on_release {
-    Input{GLFW_KEY_TAB, toggleWireFrame},
-    Input{GLFW_KEY_R, resetCamera},
-    Input{GLFW_KEY_LEFT_SHIFT, setCameraSpeed(2.0f)}
-};
-
-
-void process_input(GLFWwindow* window, State& state)
-{
-    glfwPollEvents();
-    
-    static float last_time = glfwGetTime();
-    float current_time = glfwGetTime();
-
-    state.Δt = current_time - last_time;
-
-    last_time = current_time;
-
-    for (const auto& input : inputs_each_frame)
-    {
-        if(glfwGetKey(window, input.glfw_key) == GLFW_PRESS)
-            input.modifier(state);
-    }
-
-    static int last_key_press = GLFW_KEY_UNKNOWN;
-    for (const auto& input : inputs_on_press)
-    {
-        if(last_key_press == GLFW_KEY_UNKNOWN && glfwGetKey(window, input.glfw_key) == GLFW_PRESS) {
-            input.modifier(state);
-            last_key_press = input.glfw_key;
-        }
-
-        if(last_key_press == input.glfw_key && glfwGetKey(window, input.glfw_key) == GLFW_RELEASE)
-            last_key_press = GLFW_KEY_UNKNOWN;
-    }
-
-    static int last_key_release = GLFW_KEY_UNKNOWN;
-    for (const auto& input : inputs_on_release)
-    {
-        if(last_key_release && glfwGetKey(window, input.glfw_key) == GLFW_PRESS)
-            last_key_release = input.glfw_key;
-
-        if(last_key_release == input.glfw_key && glfwGetKey(window, input.glfw_key) == GLFW_RELEASE)
+        Input(GLFWwindow* window, State& state) noexcept :
+            m_window{window},
+            m_state{state}
         {
-            input.modifier(state);
-            last_key_release = GLFW_KEY_UNKNOWN;
+            state_ptr = &m_state;
+            setMouseInputMode(GLFW_CURSOR_DISABLED);
         }
-    }
 
-    static double last_x, last_y = -1.0;
-    double new_x, new_y;
+        ~Input() noexcept
+        {
+            reset();
+            state_ptr = nullptr;
+        };
 
-    glfwGetCursorPos(window, &new_x, &new_y);
+        void update() noexcept
+        {
+            glfwPollEvents();
 
-    double xΔ = new_x - last_x;
-    double yΔ = new_y - last_y;
+            handleKeyboard(getDelta());
 
-    last_x = new_x;
-    last_y = new_y;
+            if (m_mouseHandler)
+            {
+                double xpos, ypos;
+                glfwGetCursorPos(m_window, &xpos, &ypos);
 
-    static bool first_mouse = true;
+                m_mouseHandler(
+                    m_state,
+                    getMouseDelta({xpos, ypos}),
+                    {xpos, ypos}
+                );
+            }
+        }
 
-    if(first_mouse)
-    {
-        last_x = new_x;
-        last_y = new_y;
-        first_mouse = false;
-        return;
-    }
+        void setKeyHandler(const Key key, const KeyHandler& handler) noexcept
+        {
+            m_keyHandlers[key] = handler;
 
-    if (xΔ != 0.0 || yΔ != 0.0)
-    {
-        state.camera.pitch(yΔ);
-        state.camera.yaw(xΔ);
-    }
-}
+            if (handler.pressed || handler.held || handler.released)
+                m_keys.emplace_back(key, KeyState::IDLE);
+        }
+
+        void setMouseHandler(const MouseHandler& handler) noexcept
+        {
+            m_mouseHandler = handler;
+        }
+
+        void setMouseScrollHandler(const MouseScrollHandler& handler) noexcept
+        {
+            scrollHandler = handler;
+
+            const auto scroll_callback = [](GLFWwindow* window, double xoffset, double yoffset)
+            {
+                scrollHandler(
+                    *state_ptr, 
+                    static_cast<float>(yoffset)
+                );
+            };
+
+            glfwSetScrollCallback(m_window, scroll_callback);
+        }
+
+        void reset() noexcept
+        {
+            m_keys.clear();
+            m_keyHandlers.clear();
+            m_mouseHandler = nullptr;
+            scrollHandler = nullptr;
+
+            glfwSetScrollCallback(m_window, nullptr);
+        }
+    private:
+        GLFWwindow* m_window;
+        State& m_state;
+
+        MouseHandler m_mouseHandler{nullptr};
+
+        enum class KeyState {
+            IDLE,
+            PRESSED,
+            HELD,
+            RELEASED
+        };
+
+        std::vector<std::pair<Key, KeyState>> m_keys{};
+        std::unordered_map<Key, KeyHandler> m_keyHandlers{};
+
+        void handleKeyboard(const float delta) noexcept
+        {
+            for (auto& [key, state] : m_keys)
+            {
+                handleKey(key, state, delta);
+            }
+        }
+
+        void handleKey(const Key key, KeyState& state, const float delta) noexcept
+        {
+            const bool isPressed = glfwGetKey(m_window, key) == GLFW_PRESS;
+
+            switch (state)
+            {
+                case KeyState::IDLE: {
+                    if (isPressed)
+                        state = KeyState::PRESSED;
+
+                    break;
+                }
+                case KeyState::PRESSED: {
+                    const auto& handler = m_keyHandlers[key].pressed;
+                    if (handler)
+                        handler(m_state, delta);
+
+                    if (isPressed)
+                        state = KeyState::HELD;
+                    else
+                        state = KeyState::RELEASED;
+
+                    break;
+                }
+                case KeyState::HELD: {
+                    const auto& handler = m_keyHandlers[key].held;
+                    if (handler)
+                        handler(m_state, delta);
+
+                    if (!isPressed)
+                        state = KeyState::RELEASED;
+
+                    break;
+                }
+                case KeyState::RELEASED: {
+                    const auto& handler = m_keyHandlers[key].released;
+                    if (handler)
+                        handler(m_state, delta);
+
+                    if (isPressed)
+                        state = KeyState::PRESSED;
+                    else
+                        state = KeyState::IDLE;
+                    break;
+                }
+            }
+        }
+
+        void setMouseInputMode(int input_mode) noexcept
+        {
+            glfwSetInputMode(m_window, GLFW_CURSOR, input_mode);
+        }
+
+        static glm::vec2 getMouseDelta(const glm::vec2 mousePos) noexcept
+        {
+            static glm::vec2 last_mousePos{0.f, 0.f};
+
+            const glm::vec2 mouseDelta = mousePos - last_mousePos;
+            last_mousePos = mousePos;
+
+            return mouseDelta;
+        }
+
+        static float getDelta() noexcept
+        {
+            static float last_time = glfwGetTime();
+            const float current_time = glfwGetTime();
+
+            const float delta = current_time - last_time;
+            last_time = current_time;
+
+            return delta;
+        }
+};  // class Input
