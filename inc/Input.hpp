@@ -19,9 +19,11 @@ class Input
     using StateModifier = std::function<void(State&, const float)>;
     using MouseHandler = std::function<void(State&, const glm::vec2, const glm::vec2)>;
     using MouseScrollHandler = std::function<void(State&, const float)>;
+    using MouseButtonHandler = std::function<void(State&, const int, const bool)>;
 
     inline static State* state_ptr = nullptr;
     inline static MouseScrollHandler scrollHandler = nullptr;
+    inline static MouseButtonHandler mouseButtonHandler = nullptr;
 
     public:
         struct KeyHandler {
@@ -76,6 +78,25 @@ class Input
             m_mouseHandler = handler;
         }
 
+        void setMouseButtonHandler(const MouseButtonHandler handler) noexcept
+        {
+            mouseButtonHandler = handler;
+
+            const auto mb_callback = [](GLFWwindow* window, int button, int action, int mods)
+            {
+                const bool isPressed =
+                    action == GLFW_PRESS;
+
+                setMouseButtonHandler(
+                    *state_ptr,
+                    button,
+                    isPressed
+                );
+            };
+
+            glfwSetMouseButtonCallback(m_window, mb_callback);
+        }
+
         void setMouseScrollHandler(const MouseScrollHandler& handler) noexcept
         {
             scrollHandler = handler;
@@ -96,7 +117,9 @@ class Input
             m_keys.clear();
             m_keyHandlers.clear();
             m_mouseHandler = nullptr;
+
             scrollHandler = nullptr;
+            mouseButtonHandler = nullptr;
 
             glfwSetScrollCallback(m_window, nullptr);
         }
@@ -128,48 +151,27 @@ class Input
         {
             const bool isPressed = glfwGetKey(m_window, key) == GLFW_PRESS;
 
-            switch (state)
-            {
-                case KeyState::IDLE: {
-                    if (isPressed)
-                        state = KeyState::PRESSED;
+            const auto& handler =
+                (state == KeyState::PRESSED) ? m_keyHandlers[key].pressed :
+                (state == KeyState::HELD) ? m_keyHandlers[key].held :
+                (state == KeyState::RELEASED) ? m_keyHandlers[key].released :
+                nullptr;
 
-                    break;
-                }
-                case KeyState::PRESSED: {
-                    const auto& handler = m_keyHandlers[key].pressed;
-                    if (handler)
-                        handler(m_state, delta);
+            if (handler)
+                handler(m_state, delta);
 
-                    if (isPressed)
-                        state = KeyState::HELD;
-                    else
-                        state = KeyState::RELEASED;
-
-                    break;
-                }
-                case KeyState::HELD: {
-                    const auto& handler = m_keyHandlers[key].held;
-                    if (handler)
-                        handler(m_state, delta);
-
-                    if (!isPressed)
-                        state = KeyState::RELEASED;
-
-                    break;
-                }
-                case KeyState::RELEASED: {
-                    const auto& handler = m_keyHandlers[key].released;
-                    if (handler)
-                        handler(m_state, delta);
-
-                    if (isPressed)
-                        state = KeyState::PRESSED;
-                    else
-                        state = KeyState::IDLE;
-                    break;
-                }
-            }
+            if (isPressed)
+                state =
+                    (state == KeyState::IDLE) ? KeyState::PRESSED :
+                    (state == KeyState::PRESSED) ? KeyState::HELD :
+                    (state == KeyState::RELEASED) ? KeyState::PRESSED :
+                    state;
+            else
+                state =
+                    (state == KeyState::PRESSED) ? KeyState::RELEASED :
+                    (state == KeyState::HELD) ? KeyState::RELEASED :
+                    (state == KeyState::RELEASED) ? KeyState::IDLE :
+                    state;
         }
 
         void setMouseInputMode(int input_mode) noexcept
