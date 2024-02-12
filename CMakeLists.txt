@@ -52,10 +52,9 @@ if (NOT EXISTS ${GLAD_DIR})
         message(FATAL_ERROR "Failed to download GLAD, generate it through: 'https://gen.glad.sh/#generator=c&api=gl%3D4.6&profile=gl%3Dcore%2Cgles1%3Dcommon&options=LOADER' and place it in ${GLAD_DIR}")
     endif()
 
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xzf glad.zip
-        WORKING_DIRECTORY ${GLAD_DIR}
-    )
+    file(ARCHIVE_EXTRACT
+        INPUT ${GLAD_DIR}/glad.zip
+        DESTINATION ${GLAD_DIR})
 
     file(REMOVE ${GLAD_DIR}/glad.zip)
 endif()

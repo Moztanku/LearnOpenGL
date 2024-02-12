@@ -20,41 +20,39 @@
 namespace Renderer::GPU
 {
 
-    struct VertexBufferElement 
-    {
-        uint count;
-        uint type;
-        uchar normalized;
+struct VertexBufferElement 
+{
+    uint count;
+    uint type;
+    uchar normalized;
 
-        static uint GetSizeOfType(uint type)
+    static auto GetSizeOfType(uint type) -> uint
+    {
+        switch (type)
         {
-            switch (type)
-            {
-                case GL_FLOAT: return sizeof(GLfloat);
-                case GL_UNSIGNED_INT: return sizeof(GLuint);
-                case GL_UNSIGNED_BYTE: return sizeof(GLbyte);
-            }
-            return 0;
+            case GL_FLOAT: return sizeof(GLfloat);
+            case GL_UNSIGNED_INT: return sizeof(GLuint);
+            case GL_UNSIGNED_BYTE: return sizeof(GLbyte);
+            default: return 0;
         }
-    }; // struct VertexBufferElement
+    }
+}; // struct VertexBufferElement
 
-    class VertexBufferLayout
-    {
-        public:
-            VertexBufferLayout() : m_Stride(0) {};
+class VertexBufferLayout
+{
+    public:
+        template<typename T>
+        auto Push(uint /*count*/) -> void
+        {
+            assert(false);
+        }
 
-            template<typename T>
-            void Push(uint count)
-            {
-                assert(false);
-            }
+        [[nodiscard]] inline auto GetElements() const -> const std::vector<VertexBufferElement>& { return m_Elements; }
+        [[nodiscard]] inline auto GetStride() const -> uint { return m_Stride; }
 
-            inline const std::vector<VertexBufferElement>& GetElements() const { return m_Elements; }
-            inline uint GetStride() const { return m_Stride; }
-
-        private:
-            std::vector<VertexBufferElement> m_Elements;
-            uint m_Stride;
-    }; // class VertexBufferLayout
+    private:
+        std::vector<VertexBufferElement> m_Elements{};
+        uint m_Stride{};
+}; // class VertexBufferLayout
 
 } // namespace Renderer::GPU

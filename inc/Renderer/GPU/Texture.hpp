@@ -26,11 +26,16 @@ class Texture
         Texture(const std::filesystem::path& path);
         ~Texture();
 
-        void Bind() const;
-        void Bind(uint slot);
-        void Unbind() const;
+        Texture(const Texture&) = delete;
+        Texture(Texture&&) = delete;
+        auto operator=(const Texture&) -> Texture& = delete;
+        auto operator=(Texture&&) -> Texture& = delete;
 
-        auto GetTextureParameters() const {
+        auto Bind() const -> void;
+        auto Bind(uint slot) -> void;
+        auto Unbind() const -> void;
+
+        [[nodiscard]] auto GetTextureParameters() const {
             struct {
                 int widht;
                 int height;
@@ -44,10 +49,10 @@ class Texture
             return params;
         }
     private:
-        uint m_id;
-        uint m_slot = 0;
+        uint m_id{};
+        uint m_slot{};
 
-        int m_width, m_height, m_nrChannels;
+        int m_width{}, m_height{}, m_nrChannels{};
 
         // TODO: Different texture wrap modes and filters
         // GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER

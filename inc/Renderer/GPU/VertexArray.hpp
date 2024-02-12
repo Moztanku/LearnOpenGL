@@ -16,18 +16,23 @@
 
 namespace Renderer::GPU {
 
-    class VertexArray
-    {
-        public:
-            VertexArray();
-            ~VertexArray();
+class VertexArray
+{
+    public:
+        VertexArray();
+        ~VertexArray();
 
-            void AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
+        VertexArray(const VertexArray&) = delete;
+        VertexArray(VertexArray&&) = delete;
+        auto operator=(const VertexArray&) -> VertexArray& = delete;
+        auto operator=(VertexArray&&) -> VertexArray& = delete;
 
-            void Bind() const;
-            void Unbind() const;
-        private:
-            uint m_id;
-    }; // class VertexArray
+        auto AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout) -> void;
+
+        auto Bind() const -> void;
+        auto Unbind() const -> void;
+    private:
+        uint m_id{};
+}; // class VertexArray
 
 } // namespace Renderer::GPU

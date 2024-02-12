@@ -1,0 +1,60 @@
+---
+######################################################################################################
+### Clang-Tidy Configuration File                                                                  ###
+###                                                                                                ###
+### To run clang-tidy on this project:                                                             ###
+###                                                                                                ###
+### 1) generate compile_commands.json with CMake:                                                ###
+###     `cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`                                   ###
+###                                                                                                ###
+### 2) run clang-tidy on source files:                                                             ###
+###     `clang-tidy -p build src/**.cpp`                                                           ###
+###                                                                                                ###
+######################################################################################################
+WarningsAsErrors: ''
+AnalyzeTemporaryDtors: false
+HeaderFilterRegex: ''
+UseColor: true
+
+ExtraArgs:
+    - '-std=c++2b'
+
+Checks: '
+    clang-diagnostic-*,
+    clang-analyzer-*,
+    modernize-*,
+    
+    cppcoreguidelines-*,
+    -cppcoreguidelines-pro-type-union-access,
+    -cppcoreguidelines-narrowing-conversions,
+    -cppcoreguidelines-avoid-magic-numbers,
+    -cppcoreguidelines-pro-type-member-init,
+    -cppcoreguidelines-macro-usage,
+
+    bugprone-*,
+    -bugprone-easily-swappable-parameters,
+    -bugprone-narrowing-conversions,
+
+    google-*,
+    -google-readability-braces-around-statements,
+    -google-explicit-constructor,
+    -google-readability-todo,
+
+    hicpp-*,
+    -hicpp-uppercase-literal-suffix,
+    -hicpp-braces-around-statements,
+    -hicpp-explicit-conversions,
+    -hicpp-signed-bitwise,
+    -hicpp-member-init,
+
+    llvm-*,
+    -llvm-namespace-comment,
+    -llvm-include-order,
+    -llvm-header-guard,
+
+    misc-*,
+    -misc-const-correctness,
+    
+    -misc-confusable-identifiers,
+    -bugprone-reserved-identifier'
+...

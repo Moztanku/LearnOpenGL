@@ -15,17 +15,21 @@
 namespace Renderer::GPU
 {
 
-    class VertexBuffer
-    {
-        public:
-            VertexBuffer(const void* data,  uint size);
-            ~VertexBuffer();
+class VertexBuffer
+{
+    public:
+        VertexBuffer(const void* data,  uint size);
+        ~VertexBuffer();
 
-            void Bind() const;
-            void Unbind() const;
-        private:
-            uint m_id;
-            
-    }; // class VertexBuffer
+        VertexBuffer(const VertexBuffer&) = delete;
+        VertexBuffer(VertexBuffer&&) = delete;
+        auto operator=(const VertexBuffer&) -> VertexBuffer& = delete;
+        auto operator=(VertexBuffer&&) -> VertexBuffer& = delete;
+
+        auto Bind() const -> void;
+        auto Unbind() const -> void;
+    private:
+        uint m_id{};
+}; // class VertexBuffer
 
 } // namespace Renderer::GPU

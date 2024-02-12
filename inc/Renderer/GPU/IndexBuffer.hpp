@@ -21,13 +21,18 @@ class IndexBuffer
         IndexBuffer(const uint* data, const uint count);
         ~IndexBuffer();
 
-        void Bind() const;
-        void Unbind() const;
+        IndexBuffer(const IndexBuffer&) = delete;
+        IndexBuffer(IndexBuffer&&) = delete;
+        auto operator=(const IndexBuffer&) -> IndexBuffer& = delete;
+        auto operator=(IndexBuffer&&) -> IndexBuffer& = delete;
 
-        inline uint GetCount() const { return m_Count; }
+        auto Bind() const -> void;
+        auto Unbind() const -> void;
+
+        [[nodiscard]] inline auto GetCount() const -> uint { return m_Count; }
     private:
-        uint m_id;
-        uint m_Count;
+        uint m_id{};
+        uint m_Count{};
 }; // class IndexBuffer
 
 } // namespace Renderer::GPU

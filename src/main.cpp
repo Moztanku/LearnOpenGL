@@ -15,10 +15,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <memory>
-#include <iostream>
 #include <format>
+#include <memory>
 #include <fstream>
+#include <iostream>
 
 #include "Input.hpp"
 #include "Renderer/Camera.hpp"
@@ -33,11 +33,10 @@
 #include "jac/type_defs.hpp"
 
 #if !defined(OpenGL_VERSION_MAJOR) || !defined(OpenGL_VERSION_MINOR)
-    #define OpenGL_VERSION_MAJOR 3
-    #define OpenGL_VERSION_MINOR 3
+    constexpr int OpenGL_VERSION_MAJOR = 3;
+    constexpr int OpenGL_VERSION_MINOR = 3;
 #endif
 
-using Renderer::Camera;
 using Renderer::GPU::Shader;
 using Renderer::GPU::Texture;
 using Renderer::GPU::VertexArray;
@@ -54,17 +53,17 @@ namespace Resources {
         const std::filesystem::path container = "res/textures/container.png";
         const std::filesystem::path face = "res/textures/grandfather-face.png";
     }
-}
+}   // namespace Resources
 
-void initialize_glfw();
-unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> create_window(const uint width, const uint height, const std::string& title);
+auto initialize_glfw() -> void;
+auto create_window(const uint width, const uint height, const std::string& title) -> unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>;
 
 struct Model {
     std::vector<float> vertices;
     VertexBufferLayout layout;
 };
 
-Model read_file(const std::filesystem::path& path)
+auto read_file(const std::filesystem::path& path) -> Model
 {
     Model data;
 
@@ -77,7 +76,7 @@ Model read_file(const std::filesystem::path& path)
     }
 
     std::string s;
-    do {
+    while (file) {
         std::getline(file, s);
 
         if (s.contains("float")){
@@ -89,7 +88,7 @@ Model read_file(const std::filesystem::path& path)
         else
             data.vertices.push_back(std::stof(s));
 
-    } while (file);
+    }
 
     return data;
 }
@@ -101,8 +100,8 @@ struct Box {
     glm::vec3 color;
 };
 
-std::vector<Box> create_boxes(const uint count);
-void draw_Box(const Box& box, Shader& shader);
+auto create_boxes(const uint count) -> std::vector<Box>;
+auto draw_Box(const Box& box, Shader& shader) -> void;
 
 /**
  * @brief Starting point, function called by jac::main in main.hpp, contains the program loop
@@ -111,7 +110,7 @@ void draw_Box(const Box& box, Shader& shader);
  * @param env environment variables passed to the program, processed by jac::main
  * @retval int return status of the program
  */
-int run(jac::Arguments& arg, jac::Arguments& env)
+auto run(jac::Arguments& /*arg*/, jac::Arguments& /*env*/) -> int
 {
     initialize_glfw();
     unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window = create_window(1600, 1200, "OpenGL");
@@ -221,7 +220,7 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     for (const auto& [key, handler] : keyHandlers)
         input.setKeyHandler(key, handler);
 
-    input.setMouseHandler([](State& state, const glm::vec2 delta, const glm::vec2 position) {
+    input.setMouseHandler([](State& state, const glm::vec2 delta, const glm::vec2 /*position*/) {
         glm::vec3 m_sensitivity{0.1f, 0.1f, 0.1f};
         glm::bvec3 m_invese{false, false, false};
 
@@ -236,7 +235,7 @@ int run(jac::Arguments& arg, jac::Arguments& env)
         state.camera.changeFov(-delta);
     });
     
-    double time;
+    double time{};
     while(!glfwWindowShouldClose(window.get()))
     {
         time = glfwGetTime();
@@ -280,7 +279,7 @@ int run(jac::Arguments& arg, jac::Arguments& env)
     return 0;
 }
 
-void initialize_glfw()
+auto initialize_glfw() -> void
 {
     if(!glfwInit())
     {
@@ -304,10 +303,15 @@ void initialize_glfw()
     #endif
 }
 
-unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> create_window(const uint width, const uint height, const std::string& title)
+auto create_window(const uint width, const uint height, const std::string& title) -> unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)>
 {
     unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window { 
-        glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr),
+        glfwCreateWindow(
+            width,
+            height,
+            title.c_str(),
+            nullptr,
+            nullptr),
         glfwDestroyWindow
     };
 
@@ -322,13 +326,13 @@ unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> create_window(const uint wi
     glfwMakeContextCurrent(window.get());
     glfwSetFramebufferSizeCallback(
         window.get(),
-        [](GLFWwindow* window, int width, int height) { glViewport(0, 0, width, height);}
+        [](GLFWwindow* /*window*/, int width, int height) { glViewport(0, 0, width, height);}
     );
 
     return window;
 }
 
-std::vector<Box> create_boxes(const uint count)
+auto create_boxes(const uint count) -> std::vector<Box>
 {
     std::vector<Box> boxes(count);
 
@@ -356,9 +360,9 @@ std::vector<Box> create_boxes(const uint count)
     return boxes;
 }
 
-void draw_Box(const Box& box, Shader& shader)
+auto draw_Box(const Box& box, Shader& shader) -> void
 {
-    glm::mat4 model = glm::mat4(1.0f);
+    auto model = glm::mat4(1.0f);
     model = glm::translate(model, box.position);
     model = glm::rotate(model, box.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
     model = glm::rotate(model, box.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));

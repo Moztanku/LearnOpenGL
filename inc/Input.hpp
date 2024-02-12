@@ -21,9 +21,9 @@ class Input
     using MouseScrollHandler = std::function<void(State&, const float)>;
     using MouseButtonHandler = std::function<void(State&, const int, const bool)>;
 
-    inline static State* state_ptr = nullptr;
-    inline static MouseScrollHandler scrollHandler = nullptr;
-    inline static MouseButtonHandler mouseButtonHandler = nullptr;
+    inline static State* state_ptr = nullptr;   // NOLINT (cppcoreguidelines-avoid-non-const-global-variables) - needed for GLFW callbacks
+    inline static MouseScrollHandler scrollHandler = nullptr;  // NOLINT ^
+    inline static MouseButtonHandler mouseButtonHandler = nullptr;  // NOLINT ^
 
     public:
         struct KeyHandler {
@@ -46,86 +46,22 @@ class Input
             state_ptr = nullptr;
         };
 
-        void update() noexcept
-        {
-            glfwPollEvents();
+        Input(const Input&) = delete;
+        Input(Input&&) = delete;
+        auto operator=(const Input&) -> Input& = delete;
+        auto operator=(Input&&) -> Input& = delete;
+        
+        auto update() noexcept -> void;
 
-            handleKeyboard(getDelta());
+        auto setKeyHandler(const Key key, const KeyHandler& handler) noexcept -> void;
+        auto setMouseHandler(const MouseHandler& handler) noexcept -> void;
+        auto setMouseButtonHandler(const MouseButtonHandler handler) noexcept -> void;
+        auto setMouseScrollHandler(const MouseScrollHandler& handler) noexcept -> void;
 
-            if (m_mouseHandler)
-            {
-                double xpos, ypos;
-                glfwGetCursorPos(m_window, &xpos, &ypos);
-
-                m_mouseHandler(
-                    m_state,
-                    getMouseDelta({xpos, ypos}),
-                    {xpos, ypos}
-                );
-            }
-        }
-
-        void setKeyHandler(const Key key, const KeyHandler& handler) noexcept
-        {
-            m_keyHandlers[key] = handler;
-
-            if (handler.pressed || handler.held || handler.released)
-                m_keys.emplace_back(key, KeyState::IDLE);
-        }
-
-        void setMouseHandler(const MouseHandler& handler) noexcept
-        {
-            m_mouseHandler = handler;
-        }
-
-        void setMouseButtonHandler(const MouseButtonHandler handler) noexcept
-        {
-            mouseButtonHandler = handler;
-
-            const auto mb_callback = [](GLFWwindow* window, int button, int action, int mods)
-            {
-                const bool isPressed =
-                    action == GLFW_PRESS;
-
-                setMouseButtonHandler(
-                    *state_ptr,
-                    button,
-                    isPressed
-                );
-            };
-
-            glfwSetMouseButtonCallback(m_window, mb_callback);
-        }
-
-        void setMouseScrollHandler(const MouseScrollHandler& handler) noexcept
-        {
-            scrollHandler = handler;
-
-            const auto scroll_callback = [](GLFWwindow* window, double xoffset, double yoffset)
-            {
-                scrollHandler(
-                    *state_ptr, 
-                    static_cast<float>(yoffset)
-                );
-            };
-
-            glfwSetScrollCallback(m_window, scroll_callback);
-        }
-
-        void reset() noexcept
-        {
-            m_keys.clear();
-            m_keyHandlers.clear();
-            m_mouseHandler = nullptr;
-
-            scrollHandler = nullptr;
-            mouseButtonHandler = nullptr;
-
-            glfwSetScrollCallback(m_window, nullptr);
-        }
+        auto reset() noexcept -> void;
     private:
         GLFWwindow* m_window;
-        State& m_state;
+        State& m_state; // NOLINT (cppcoreguidelines-avoid-const-or-ref-data-members) - maybe change to
 
         MouseHandler m_mouseHandler{nullptr};
 
@@ -139,64 +75,15 @@ class Input
         std::vector<std::pair<Key, KeyState>> m_keys{};
         std::unordered_map<Key, KeyHandler> m_keyHandlers{};
 
-        void handleKeyboard(const float delta) noexcept
-        {
-            for (auto& [key, state] : m_keys)
-            {
-                handleKey(key, state, delta);
-            }
-        }
+        auto handleKeyboard(const float delta) noexcept -> void;
+        auto handleKey(const Key key, KeyState& state, const float delta) noexcept -> void;
 
-        void handleKey(const Key key, KeyState& state, const float delta) noexcept
-        {
-            const bool isPressed = glfwGetKey(m_window, key) == GLFW_PRESS;
+        auto setMouseInputMode(int input_mode) noexcept -> void;
 
-            const auto& handler =
-                (state == KeyState::PRESSED) ? m_keyHandlers[key].pressed :
-                (state == KeyState::HELD) ? m_keyHandlers[key].held :
-                (state == KeyState::RELEASED) ? m_keyHandlers[key].released :
-                nullptr;
-
-            if (handler)
-                handler(m_state, delta);
-
-            if (isPressed)
-                state =
-                    (state == KeyState::IDLE) ? KeyState::PRESSED :
-                    (state == KeyState::PRESSED) ? KeyState::HELD :
-                    (state == KeyState::RELEASED) ? KeyState::PRESSED :
-                    state;
-            else
-                state =
-                    (state == KeyState::PRESSED) ? KeyState::RELEASED :
-                    (state == KeyState::HELD) ? KeyState::RELEASED :
-                    (state == KeyState::RELEASED) ? KeyState::IDLE :
-                    state;
-        }
-
-        void setMouseInputMode(int input_mode) noexcept
-        {
-            glfwSetInputMode(m_window, GLFW_CURSOR, input_mode);
-        }
-
-        static glm::vec2 getMouseDelta(const glm::vec2 mousePos) noexcept
-        {
-            static glm::vec2 last_mousePos{0.f, 0.f};
-
-            const glm::vec2 mouseDelta = mousePos - last_mousePos;
-            last_mousePos = mousePos;
-
-            return mouseDelta;
-        }
-
-        static float getDelta() noexcept
-        {
-            static float last_time = glfwGetTime();
-            const float current_time = glfwGetTime();
-
-            const float delta = current_time - last_time;
-            last_time = current_time;
-
-            return delta;
-        }
+        static auto getMouseDelta(const glm::vec2 mousePos) noexcept -> glm::vec2;
+        static auto getDelta() noexcept -> float;
 };  // class Input
+
+#define INCLUDE_INPUT_INL
+#include "Input.inl"
+#undef INCLUDE_INPUT_INL

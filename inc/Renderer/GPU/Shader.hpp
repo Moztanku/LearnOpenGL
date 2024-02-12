@@ -28,20 +28,25 @@ class Shader
         Shader(const std::filesystem::path& vertex_path, const std::filesystem::path& fragment_path);
         ~Shader();
 
-        void Bind() const;
-        void Unbind() const;
+        Shader(const Shader&) = delete;
+        Shader(Shader&&) = delete;
+        auto operator=(const Shader&) -> Shader& = delete;
+        auto operator=(Shader&&) -> Shader& = delete;
+
+        auto Bind() const -> void;
+        auto Unbind() const -> void;
 
         template<typename... Args>
-        void SetUniform(const std::string& name, Args... args);
+        auto SetUniform(const std::string& name, Args... args) -> void;
 
         template<typename Matrix>
-        void SetUniformM(const std::string& name, const Matrix& matrix);
+        auto SetUniformM(const std::string& name, const Matrix& matrix) -> void;
     private:
-        uint m_id;
-        std::filesystem::path m_FilePath;
-        std::unordered_map<std::string, uint> m_UniformLocationCache;
+        uint m_id{};
+        std::filesystem::path m_FilePath{};
+        std::unordered_map<std::string, uint> m_UniformLocationCache{};
 
-        uint GetUniformLocation(const std::string& name);
+        auto GetUniformLocation(const std::string& name) -> uint;
 }; // class Shader
 
 } // namespace Renderer::GPU
