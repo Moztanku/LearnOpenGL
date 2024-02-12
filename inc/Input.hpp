@@ -61,7 +61,7 @@ class Input
         auto reset() noexcept -> void;
     private:
         GLFWwindow* m_window;
-        State& m_state; // NOLINT (cppcoreguidelines-avoid-const-or-ref-data-members) - maybe change to
+        State& m_state; // NOLINT (cppcoreguidelines-avoid-const-or-ref-data-members) - maybe change to shared_ptr
 
         MouseHandler m_mouseHandler{nullptr};
 
