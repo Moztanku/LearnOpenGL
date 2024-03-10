@@ -15,36 +15,21 @@
 template <typename State>
 class Input
 {
-    using Key = int;
-    using StateModifier = std::function<void(State&, const float)>;
-    using MouseHandler = std::function<void(State&, const glm::vec2, const glm::vec2)>;
-    using MouseScrollHandler = std::function<void(State&, const float)>;
-    using MouseButtonHandler = std::function<void(State&, const int, const bool)>;
-
-    inline static State* state_ptr = nullptr;   // NOLINT (cppcoreguidelines-avoid-non-const-global-variables) - needed for GLFW callbacks
-    inline static MouseScrollHandler scrollHandler = nullptr;  // NOLINT ^
-    inline static MouseButtonHandler mouseButtonHandler = nullptr;  // NOLINT ^
-
     public:
+        using Key = int;
+        using StateModifier = std::function<void(State&, const float)>;
+        using MouseHandler = std::function<void(State&, const glm::vec2, const glm::vec2)>;
+        using MouseScrollHandler = std::function<void(State&, const float)>;
+        using MouseButtonHandler = std::function<void(State&, const int, const bool)>;
+
         struct KeyHandler {
             StateModifier pressed{nullptr};
             StateModifier held{nullptr};
             StateModifier released{nullptr};
         };
 
-        Input(GLFWwindow* window, State& state) noexcept :
-            m_window{window},
-            m_state{state}
-        {
-            state_ptr = &m_state;
-            setMouseInputMode(GLFW_CURSOR_DISABLED);
-        }
-
-        ~Input() noexcept
-        {
-            reset();
-            state_ptr = nullptr;
-        };
+        Input(GLFWwindow* window, State& state) noexcept;
+        ~Input() noexcept;
 
         Input(const Input&) = delete;
         Input(Input&&) = delete;

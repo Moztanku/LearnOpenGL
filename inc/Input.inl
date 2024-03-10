@@ -3,6 +3,36 @@
 #else
 #include "Input.hpp"
 
+namespace {
+    template<typename State>
+    static State* state_ptr = nullptr;   // NOLINT (cppcoreguidelines-avoid-non-const-global-variables) - needed for GLFW callbacks
+
+    template<typename State>
+    static Input<State>::MouseScrollHandler scrollHandler = nullptr;
+
+    template <typename State>
+    static Input<State>::MouseButtonHandler mouseButtonHandler = nullptr;
+}   // namespace
+
+// Ctors & Dtors //
+
+template <typename State>
+Input<State>::Input(GLFWwindow* window, State& state) noexcept :
+    m_window{window},
+    m_state{state}
+{
+    state_ptr<State> = &m_state;
+    setMouseInputMode(GLFW_CURSOR_DISABLED);
+}
+
+template <typename State>
+Input<State>::~Input() noexcept
+{
+    reset();
+    state_ptr<State> = nullptr;
+};
+
+// Ctors & Dtors //
 // Public methods //
 
 template <typename State>
@@ -43,15 +73,15 @@ auto Input<State>::setMouseHandler(const MouseHandler& handler) noexcept -> void
 template <typename State>
 auto Input<State>::setMouseButtonHandler(const MouseButtonHandler handler) noexcept -> void
 {
-    mouseButtonHandler = handler;
+    mouseButtonHandler<State> = handler;
 
     const auto mb_callback = [](GLFWwindow* /*window*/, int button, int action, int /*mods*/)
     {
         const bool isPressed =
             action == GLFW_PRESS;
 
-        mouseButtonHandler(
-            *state_ptr,
+        mouseButtonHandler<State>(
+            *state_ptr<State>,
             button,
             isPressed
         );
@@ -63,12 +93,12 @@ auto Input<State>::setMouseButtonHandler(const MouseButtonHandler handler) noexc
 template <typename State>
 auto Input<State>::setMouseScrollHandler(const MouseScrollHandler& handler) noexcept -> void
 {
-    scrollHandler = handler;
+    scrollHandler<State> = handler;
 
     const auto scroll_callback = [](GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
     {
-        scrollHandler(
-            *state_ptr, 
+        scrollHandler<State>(
+            *state_ptr<State>, 
             static_cast<float>(yoffset)
         );
     };
@@ -83,8 +113,8 @@ auto Input<State>::reset() noexcept -> void
     m_keyHandlers.clear();
     m_mouseHandler = nullptr;
 
-    scrollHandler = nullptr;
-    mouseButtonHandler = nullptr;
+    scrollHandler<State> = nullptr;
+    mouseButtonHandler<State> = nullptr;
 
     glfwSetScrollCallback(m_window, nullptr);
 }
