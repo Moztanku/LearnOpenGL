@@ -150,13 +150,13 @@ auto Input<State>::handleKey(const Key key, KeyState& state, const float delta) 
             (state == KeyState::IDLE) ? KeyState::PRESSED :
             (state == KeyState::PRESSED) ? KeyState::HELD :
             (state == KeyState::RELEASED) ? KeyState::PRESSED :
-            state;
+            state;  // KeyState::HELD
     else
         state =
             (state == KeyState::PRESSED) ? KeyState::RELEASED :
             (state == KeyState::HELD) ? KeyState::RELEASED :
             (state == KeyState::RELEASED) ? KeyState::IDLE :
-            state;
+            state;  // KeyState::IDLE
 }
 
 template <typename State>

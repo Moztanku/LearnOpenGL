@@ -45,8 +45,9 @@ using Renderer::GPU::VertexBufferLayout;
 
 namespace Resources {
     namespace Shaders {
-        const std::filesystem::path basic_vertex = "res/shaders/basic.vert";
-        const std::filesystem::path basic_fragment = "res/shaders/basic.frag";
+        const std::filesystem::path basic_vert = "res/shaders/basic.vert";
+        const std::filesystem::path basic_frag = "res/shaders/basic.frag";
+        const std::filesystem::path basic_light_frag = "res/shaders/basic_light.frag";
     }
 
     namespace Textures {
@@ -79,7 +80,7 @@ auto read_file(const std::filesystem::path& path) -> Model
     while (file) {
         std::getline(file, s);
 
-        if (s.contains("float")){
+        if (s.find("float") != std::string::npos){
             const uint count = std::stoi(
                 s.substr(s.find(' '), s.size() - s.find(' '))
             );
@@ -125,8 +126,8 @@ auto run(jac::Arguments& /*arg*/, jac::Arguments& /*env*/) -> int
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     Shader shader(
-        Resources::Shaders::basic_vertex,
-        Resources::Shaders::basic_fragment
+        Resources::Shaders::basic_vert,
+        Resources::Shaders::basic_light_frag
     );
 
     const std::vector<Box> boxes = create_boxes(8000);
@@ -234,7 +235,7 @@ auto run(jac::Arguments& /*arg*/, jac::Arguments& /*env*/) -> int
     input.setMouseScrollHandler([](State& state, const float delta) {
         state.camera.changeFov(-delta);
     });
-    
+
     double time{};
     while(!glfwWindowShouldClose(window.get()))
     {
@@ -371,6 +372,7 @@ auto draw_Box(const Box& box, Shader& shader) -> void
 
     shader.SetUniformM("uModel", model);
     shader.SetUniform("uColor", box.color.r, box.color.g, box.color.b, 1.0f);
+    shader.SetUniform("uLightColor", 0.1f, 0.1f, 0.1f);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
